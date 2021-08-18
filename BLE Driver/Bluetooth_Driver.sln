@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30413.136
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bluetooth_Driver", "..\..\..\source\repos\Bluetooth_Test\Bluetooth_Driver.csproj", "{5AC2479B-EFEE-44AE-89D0-D07E546A56D3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bluetooth_Driver", "Bluetooth_Driver.csproj", "{5AC2479B-EFEE-44AE-89D0-D07E546A56D3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
