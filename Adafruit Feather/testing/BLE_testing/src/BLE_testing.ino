@@ -1,7 +1,7 @@
 #include <Bluefruit.h>
 
 #define CLIENT_NAME "BLE_windows"  
-#define HOST_NAME "Remote_IMU"  
+#define HOST_NAME "IMU"  
 
 BLEUart bleuart; 
 
@@ -12,6 +12,8 @@ uint8_t connection_interval_min = 12; //12 * 1.25ms = 15ms
 uint8_t connection_interval_max = 20; //20 * 1.25ms = 25ms
 
 uint8_t connection_handle;
+
+SoftwareTimer dataTimer;
 
 void setup() 
 {
@@ -29,7 +31,9 @@ void setup()
 
   bleuart.begin();
   bleuart.setRxCallback(bleuart_rx_callback); //called when data is RECEIVED
+  bleuart.setNotifyCallback(bleuart_notify_callback);
 
+  Serial.println("Advertising");
   advertise();
 }
 
@@ -39,7 +43,7 @@ void advertise()
   Bluefruit.Advertising.addTxPower();
   Bluefruit.Advertising.addService(bleuart);
   if(!Bluefruit.Advertising.addName())
-    Bluefruit.ScanResponse.addName();
+   Bluefruit.ScanResponse.addName();
   
   Bluefruit.Advertising.restartOnDisconnect(true);
   Bluefruit.Advertising.setInterval(32, 244);
@@ -94,7 +98,8 @@ void onDisconnect(uint16_t conn_handle, uint8_t reason)
 
 void loop() 
 {
-  delay(50);
+  delay(1000);
+  Serial.println("tic..");
 }
 
 void bleuart_rx_callback(uint16_t conn_hdl)
@@ -107,4 +112,11 @@ void bleuart_rx_callback(uint16_t conn_hdl)
 
   Serial.println(str);
 
+}
+
+
+void bleuart_notify_callback(uint16_t conn_hdl, bool enabled)
+{
+  Serial.println("Notify ON!");
+  dataTimer.start();
 }
