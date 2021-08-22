@@ -46,6 +46,8 @@ namespace BLE_Drive_UI.src
             }
             catch(Exception e)
             {
+
+                OnStatusChanged("Failed to connect");
                 throw new Exception("Failed to Connect: ", e);
             }
             try
@@ -56,12 +58,6 @@ namespace BLE_Drive_UI.src
                 GattDeviceServicesResult service_result = await _BLEDevice.GetGattServicesAsync();
 
                 //GattCharacteristicsResult char_result;
-
-                Guid bleuart_service_uuid = new Guid(BLEUUID.BLEUART_UUID_SERVICE);
-                Guid bleuart_rx_uuid = new Guid(BLEUUID.BLEUART_UUID_CHR_RXD);
-                Guid bleuart_tx_uuid = new Guid(BLEUUID.BLEUART_UUID_CHR_TXD);
-
-                var cccdValue_Notify = GattClientCharacteristicConfigurationDescriptorValue.None;
 
                 if (service_result.Status == GattCommunicationStatus.Success)
                 {
@@ -112,7 +108,6 @@ namespace BLE_Drive_UI.src
             }
             catch(Exception e)
             {
-                OnStatusChanged("Failed to connect");
                 Console.WriteLine("[ConnectDevice()]: " + e.ToString());
             }
             finally

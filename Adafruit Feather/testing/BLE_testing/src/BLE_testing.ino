@@ -95,8 +95,6 @@ void loop()
 {
   delay(1000);
   Serial.println("tic..");
-  blebas.write(rand() % 100);
-  blebas.notify(rand() % 100);
 
   for(int i = 0; i < 10; i++)
   {
