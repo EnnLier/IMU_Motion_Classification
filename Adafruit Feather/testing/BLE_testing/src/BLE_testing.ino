@@ -3,7 +3,8 @@
 #define CLIENT_NAME "BLE_windows"  
 #define HOST_NAME "IMU"  
 
-BLEUart bleuart; 
+BLEUart bleuart;
+BLEBas blebas;
 
 bool connected = false;
 bool initialized = false;
@@ -14,6 +15,8 @@ uint8_t connection_interval_max = 20; //20 * 1.25ms = 25ms
 uint8_t connection_handle;
 
 SoftwareTimer dataTimer;
+
+BLEUuid testUUID(UUID16_CHR_BATTERY_LEVEL);
 
 void setup() 
 {
@@ -29,9 +32,18 @@ void setup()
   Bluefruit.Periph.setDisconnectCallback(onDisconnect); //called on DISCONNECT
   Bluefruit.Periph.setConnInterval(connection_interval_min , connection_interval_max);
 
+  byte uart_uuid[] ={0x9E, 0xCA, 0xDC, 0x24, 0x0E, 0xE5, 0xA9, 0xE0, 0x93, 0xF3, 0xA3, 0xB5, 0x08, 0x00, 0x40, 0x6E};
+  byte bat_uuid[] = {0x9E, 0xCA, 0xDC, 0x24, 0x0E, 0xE5, 0xA9, 0xE0, 0x93, 0xF3, 0xA3, 0xB5, 0x04, 0x00, 0x40, 0x6E};
+ 
+  bleuart.setUuid(uart_uuid);
   bleuart.begin();
   bleuart.setRxCallback(bleuart_rx_callback); //called when data is RECEIVED
   bleuart.setNotifyCallback(bleuart_notify_callback);
+
+  blebas.setUuid(bat_uuid);
+  blebas.begin();
+
+  dataTimer.begin(50,SendData,0,true);
 
   Serial.println("Advertising");
   advertise();
@@ -52,24 +64,6 @@ void advertise()
 
 }
 
-// Advertising with service UUIDs
-// const uint8_t BLEUART_UUID_SERVICE[] =
-// {
-//     0x9E, 0xCA, 0xDC, 0x24, 0x0E, 0xE5, 0xA9, 0xE0,
-//     0x93, 0xF3, 0xA3, 0xB5, 0x01, 0x00, 0x40, 0x6E
-// };
-
-// const uint8_t BLEUART_UUID_CHR_RXD[] =
-// {
-//     0x9E, 0xCA, 0xDC, 0x24, 0x0E, 0xE5, 0xA9, 0xE0,
-//     0x93, 0xF3, 0xA3, 0xB5, 0x02, 0x00, 0x40, 0x6E
-// };
-
-// const uint8_t BLEUART_UUID_CHR_TXD[] =
-// {
-//     0x9E, 0xCA, 0xDC, 0x24, 0x0E, 0xE5, 0xA9, 0xE0,
-//     0x93, 0xF3, 0xA3, 0xB5, 0x03, 0x00, 0x40, 0x6E
-// };
 
 void onConnect(uint16_t conn_handle)
 {
@@ -95,11 +89,19 @@ void onDisconnect(uint16_t conn_handle, uint8_t reason)
   Serial.print("Disconnected, reason = 0x"); Serial.println(reason, HEX);
 }
 
+uint8_t data[10] = {0,0,0,0,0,0,0,0,0,0};
 
 void loop() 
 {
   delay(1000);
   Serial.println("tic..");
+  blebas.write(rand() % 100);
+  blebas.notify(rand() % 100);
+
+  for(int i = 0; i < 10; i++)
+  {
+    data[i] = rand() % 10;
+  } 
 }
 
 void bleuart_rx_callback(uint16_t conn_hdl)
@@ -112,6 +114,12 @@ void bleuart_rx_callback(uint16_t conn_hdl)
 
   Serial.println(str);
 
+}
+
+void SendData(TimerHandle_t handle)
+{ 
+  bleuart.write(data,10);
+  digitalToggle(LED_RED);
 }
 
 
