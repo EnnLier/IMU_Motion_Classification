@@ -104,7 +104,6 @@ void loop()
 
 void bleuart_rx_callback(uint16_t conn_hdl)
 {
-  //Initialize Connection Parameters after parent device establishes all connections and sends the desired operating + fusion mode
   uint32_t t_size = bleuart.available();
 
   char str[t_size];
