@@ -8,7 +8,8 @@ using Windows.Devices.Bluetooth;
 using BLE_Drive_UI.Domain;
 using System.Threading;
 using Windows.Storage.Streams;
-using Windows.Security.Cryptography;
+using System.Net;
+using System.Net.Sockets;
 
 namespace BLE_Drive_UI.src
 {
@@ -30,12 +31,93 @@ namespace BLE_Drive_UI.src
         public event EventHandler<statusChangedEventArgs> StatusChanged;
         public event EventHandler SelectedDeviceFound;
 
-        private GattCharacteristic BleuartCharacteristic;
-        private GattCharacteristic BatteryCharacteristic;
+
+        private IPHostEntry _host;
+        private IPAddress _ipAddress;
+        private IPEndPoint _remoteEP;
+        private Socket _sender;
 
 
         public BLEdriver()
         {
+            //ClearStringBuffer();
+        }
+
+        private void StartClient()
+        {
+            byte[] bytes = new byte[1024];
+            try
+            {
+                // Connect to a Remote server  
+                // Get Host IP Address that is used to establish a connection  
+                // In this case, we get one IP address of localhost that is IP : 127.0.0.1  
+                // If a host has multiple addresses, you will get a list of addresses  
+                _host = Dns.GetHostEntry("localhost");
+                _ipAddress = _host.AddressList[0];
+                _remoteEP = new IPEndPoint(_ipAddress, 11000);
+
+                // Create a TCP/IP  socket.    
+                _sender =new Socket(_ipAddress.AddressFamily,SocketType.Stream, ProtocolType.Tcp);
+
+                // Connect the socket to the remote endpoint. Catch any errors.    
+                try
+                {
+                    // Connect to Remote EndPoint  
+                    _sender.Connect(_remoteEP);
+
+                    Console.WriteLine("Socket connected to {0}",
+                        _sender.RemoteEndPoint.ToString());
+
+                    // Encode the data string into a byte array.    
+                    //byte[] msg = Encoding.ASCII.GetBytes("This is a test<EOF>");
+                    byte[] msg = Encoding.ASCII.GetBytes("This is a test<EOF>");
+                    // Send the data through the socket.    
+                    int bytesSent = _sender.Send(msg);
+                    // Receive the response from the remote device.    
+                    //int bytesRec = _sender.Receive(bytes);
+                    //Console.WriteLine("Echoed test = {0}",Encoding.ASCII.GetString(bytes, 0, bytesRec));
+
+                }
+                catch (ArgumentNullException ane)
+                {
+                    Console.WriteLine("ArgumentNullException : {0}", ane.ToString());
+                }
+                catch (SocketException se)
+                {
+                    Console.WriteLine("SocketException : {0}", se.ToString());
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Unexpected exception : {0}", e.ToString());
+                }
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+            }
+        }
+
+        private void CloseClient()
+        {
+            // Release the socket.    
+            _sender.Shutdown(SocketShutdown.Both);
+            _sender.Close();
+        }
+
+        private void sendData(String data)
+        {
+            //byte[] bytes = new byte[180];
+
+            byte[] msg = Encoding.ASCII.GetBytes(data);
+
+            // Send the data through the socket.    
+            int bytesSent = _sender.Send(msg);
+
+            // Receive the response from the remote device.    
+            //int bytesRec = _sender.Receive(bytes);
+            //Console.WriteLine("Echoed test = {0}",
+            //    Encoding.ASCII.GetString(bytes, 0, bytesRec));
         }
 
         public async void ConnectDevice(BLEdevice deviceInformation)
@@ -58,135 +140,112 @@ namespace BLE_Drive_UI.src
                 OnStatusChanged("Failed to connect");
                 throw new Exception("Failed to Connect: ", e);
             }
-            try
+            OnStatusChanged("Connecting...");
+
+
+            GattDeviceServicesResult service_result = await _BLEDevice.GetGattServicesAsync();
+
+            //GattCharacteristicsResult char_result;
+
+            if (service_result.Status == GattCommunicationStatus.Success)
             {
-                OnStatusChanged("Connecting...");
-
-
-                GattDeviceServicesResult service_result = await _BLEDevice.GetGattServicesAsync();
-
-                //GattCharacteristicsResult char_result;
-
-                if (service_result.Status == GattCommunicationStatus.Success)
+                foreach (GattDeviceService serv in service_result.Services)
                 {
-                    foreach (GattDeviceService serv in service_result.Services)
+
+                    GattCharacteristicsResult char_result = await serv.GetCharacteristicsAsync();
+
+                    foreach (GattCharacteristic characteristic in char_result.Characteristics)
                     {
-
-                        GattCharacteristicsResult char_result = await serv.GetCharacteristicsAsync();
-
-                        foreach (GattCharacteristic characteristic in char_result.Characteristics)
+                        var properties = characteristic.CharacteristicProperties;
+                        if (serv.Uuid == new Guid(BLEUUID.BLEUART_CUSTOM_UUID))
                         {
-                            var properties = characteristic.CharacteristicProperties;
-                            if (serv.Uuid == new Guid(BLEUUID.BLEUART_CUSTOM_UUID))
+                            //BleuartCharacteristic = characteristic;
+                            if (properties.HasFlag(GattCharacteristicProperties.Notify))
                             {
-                                //BleuartCharacteristic = characteristic;
-                                if (properties.HasFlag(GattCharacteristicProperties.Notify))
+                                GattCommunicationStatus status = await characteristic.WriteClientCharacteristicConfigurationDescriptorAsync(
+                                    GattClientCharacteristicConfigurationDescriptorValue.Notify);
+                                if (status == GattCommunicationStatus.Success)
                                 {
-                                    GattCommunicationStatus status = await characteristic.WriteClientCharacteristicConfigurationDescriptorAsync(
-                                        GattClientCharacteristicConfigurationDescriptorValue.Notify);
-                                    if (status == GattCommunicationStatus.Success)
-                                    {
-                                        BleuartCharacteristic = characteristic;
-                                        Console.WriteLine("Success0");
-                                    }
-                                }
-                            }   
-                            if(serv.Uuid == new Guid(BLEUUID.BLEUART_BATTERY_SERVICE))
-                            {
-                                if (properties.HasFlag(GattCharacteristicProperties.Notify))
-                                {
-                                    GattCommunicationStatus status = await characteristic.WriteClientCharacteristicConfigurationDescriptorAsync(
-                                        GattClientCharacteristicConfigurationDescriptorValue.Notify);
-                                    if (status == GattCommunicationStatus.Success)
-                                    {
-                                        BatteryCharacteristic = characteristic;
-                                        Console.WriteLine("Success1");
-                                    }
+                                    _deviceInformation.BLEuartCharacteristic = characteristic;
                                 }
                             }
-                            //if (properties.HasFlag(GattCharacteristicProperties.Notify))
-                            //{
-                            //    try
-                            //    {
-                            //        GattCommunicationStatus status = await characteristic.WriteClientCharacteristicConfigurationDescriptorAsync(
-                            //            GattClientCharacteristicConfigurationDescriptorValue.Notify);
-                            //        if (status == GattCommunicationStatus.Success)
-                            //        {
-
-                            //            ////var bat_uuid = new Byte[] { 0x9E, 0xCA, 0xDC, 0x24, 0x0E, 0xE5, 0xA9, 0xE0, 0x93, 0xF3, 0xA3, 0xB5, 0x04, 0x00, 0x40, 0x6E };
-                            //            ////Console.WriteLine(serv.Uuid);
-                            //            ////Console.WriteLine(BLEUUID.toGuid(bat_uuid));
-                            //            //characteristic.ValueChanged += Characteristic_ValueChanged;
-                            //        }
-                            //    }
-                            //    catch(System.Exception e)
-                            //    {
-                            //        Console.WriteLine("Failed to notify enable: " + e);
-                            //    }
-                            //}
+                        }   
+                        if(serv.Uuid == new Guid(BLEUUID.BLEUART_BATTERY_SERVICE))
+                        {
+                            if (properties.HasFlag(GattCharacteristicProperties.Notify))
+                            {
+                                GattCommunicationStatus status = await characteristic.WriteClientCharacteristicConfigurationDescriptorAsync(
+                                    GattClientCharacteristicConfigurationDescriptorValue.Notify);
+                                if (status == GattCommunicationStatus.Success)
+                                {
+                                    _deviceInformation.BatteryCharacteristic = characteristic;
+                                }
+                            }
                         }
+                    }
                         
-                    }
-                    try
+                }
+                try
+                {
+                    if (_deviceInformation.BatteryCharacteristic != null && _deviceInformation.BLEuartCharacteristic != null)
                     {
-
-                        if (BatteryCharacteristic != null)
-                        {
-                            BatteryCharacteristic.ValueChanged += Characteristic_ValueChanged;
-                            Console.WriteLine("BLEBAS");
-                        }
-                        if (BleuartCharacteristic != null)
-                        {
-                            BleuartCharacteristic.ValueChanged += Characteristic_ValueChanged;
-                            Console.WriteLine("BLEUART");
-                        }
-                        else
-                        {
-                            OnStatusChanged("Failed to Connect");
-                        }
+                        StartClient();
+                        _deviceInformation.BatteryCharacteristic.ValueChanged += Characteristic_ValueChanged;
+                        _deviceInformation.BLEuartCharacteristic.ValueChanged += Characteristic_ValueChanged;
                     }
-                    catch (Exception e)
+                    else
                     {
+                        Console.WriteLine("Battery Service: + " );
                         OnStatusChanged("Services not found");
                     }
                 }
+                catch (Exception e)
+                {
+                    OnStatusChanged("Services not found");
+                    Console.WriteLine("Services not found: " + e.ToString());
+                }
             }
-            catch(Exception e)
-            {
-                Console.WriteLine("[ConnectDevice()]: " + e.ToString());
-            }
-            finally
-            {
-                _busy = false;
-            }
+
         }
 
+        private String ClearStringBuffer(String stringBuffer)
+        {
+            stringBuffer = String.Empty;
+            return Encoding.Default.GetString(new Byte[] { 0x55});
+        }
+
+        private String ToOutgoingPacket(String stringBuffer)
+        {
+            stringBuffer.Insert(0 ,Encoding.Default.GetString(new Byte[] { 0x55 }));
+            stringBuffer += "<EOF>";
+            return stringBuffer;
+        }
 
         private void Characteristic_ValueChanged(GattCharacteristic sender, GattValueChangedEventArgs args)
         {
             var reader = DataReader.FromBuffer(args.CharacteristicValue);
-            if (BatteryCharacteristic == null || BleuartCharacteristic == null) { Console.WriteLine("isNull"); return; }
-            if (sender.Service.AttributeHandle == BatteryCharacteristic.Service.AttributeHandle)
+            if (_deviceInformation.BatteryCharacteristic == null || _deviceInformation.BLEuartCharacteristic == null) { Console.WriteLine("isNull"); return; }
+            if (sender.Service.AttributeHandle == _deviceInformation.BatteryCharacteristic.Service.AttributeHandle)
             {
-                //var reader = DataReader.FromBuffer(args.CharacteristicValue);
                 BatteryLevel = reader.ReadUInt16();
-                Console.WriteLine("fdjlksjf");
             }
-            if(sender.Service.AttributeHandle == BleuartCharacteristic.Service.AttributeHandle)
+            if(sender.Service.AttributeHandle == _deviceInformation.BLEuartCharacteristic.Service.AttributeHandle)
             {
-                //var reader = DataReader.FromBuffer(args.CharacteristicValue);
                 var buff = new Byte[9];
-                var sBuff = String.Empty;
                 reader.ReadBytes(buff);
 
-                _stringBuffer += Encoding.Default.GetString(buff);
+                sendData(ToOutgoingPacket(Encoding.Default.GetString(buff)));
 
-                if(_stringBuffer.Length >= 180)
-                {
-                    Console.WriteLine(_stringBuffer.Length);
-                    Console.WriteLine(_stringBuffer);
-                    _stringBuffer = String.Empty;
-                }
+                //_stringBuffer += Encoding.Default.GetString(buff);
+
+                //if (_stringBuffer.Length >= 181)
+                //{
+                //    _stringBuffer += "<EOF>";
+                //    //    Console.WriteLine(_stringBuffer.Length);
+                //    //    Console.WriteLine(_stringBuffer);
+                //    sendData();
+                //    ClearStringBuffer();
+                //}
                 //Console.WriteLine("Buffer: " + Encoding.Default.GetString(buff));
                 //Console.WriteLine(_incomingBuffer.Length);
 
@@ -201,12 +260,13 @@ namespace BLE_Drive_UI.src
 
         }
 
+
         public async void WriteToBLEDevice(Byte[] data)
         {
             var writer = new DataWriter();
             writer.ByteOrder = ByteOrder.LittleEndian;
             writer.WriteBytes(data);
-            GattCommunicationStatus result = await BleuartCharacteristic.WriteValueAsync(writer.DetachBuffer());
+            GattCommunicationStatus result = await _deviceInformation.BLEuartCharacteristic.WriteValueAsync(writer.DetachBuffer());
             if (result == GattCommunicationStatus.Success)
             {
                 Console.WriteLine(" Successfully wrote to device");
@@ -217,7 +277,7 @@ namespace BLE_Drive_UI.src
             var writer = new DataWriter();
             writer.ByteOrder = ByteOrder.LittleEndian;
             writer.WriteString(data);
-            GattCommunicationStatus result = await BleuartCharacteristic.WriteValueAsync(writer.DetachBuffer());
+            GattCommunicationStatus result = await _deviceInformation.BLEuartCharacteristic.WriteValueAsync(writer.DetachBuffer());
             if (result == GattCommunicationStatus.Success)
             {
                 Console.WriteLine(" Successfully wrote to device");

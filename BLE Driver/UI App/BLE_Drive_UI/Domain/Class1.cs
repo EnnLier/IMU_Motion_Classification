@@ -10,14 +10,14 @@ using BLE_Drive_UI.Domain;
 namespace BLE_Drive_UI.Domain
 {
 
-    public struct BLEdevice
+    public class BLEdevice
     {
         public BLEdevice(String name, String id, bool canpair)
         {
             Name = name;
             Id = id;
             canPair = canpair;
-        //public GattCharacteristic BatteryCharacteristic { get; set; }
+        
         //Service = new Guid();
         //HandlesOfCharacteristicsOfService = new Dictionary<Guid,Dictionary<Guid, ushort>>();
 
@@ -44,6 +44,9 @@ namespace BLE_Drive_UI.Domain
         public String Name { get; }
         public String Id { get; }
         public bool canPair { get; }
+        public GattCharacteristic BatteryCharacteristic { get; set; }
+        public GattCharacteristic BLEuartCharacteristic { get; set; }
+
         //public Guid Service { get;set;}
         //public Dictionary<Guid,Dictionary<Guid,ushort>> HandlesOfCharacteristicsOfService { get;set;}
 
