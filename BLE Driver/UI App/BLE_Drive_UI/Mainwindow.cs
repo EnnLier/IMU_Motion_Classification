@@ -69,7 +69,18 @@ namespace BLE_Drive_UI
 
         private void BLEdriver_StatusChanged(object sender, statusChangedEventArgs e)
         {
-            this.l_Driver_Status.Text = e.Timestamp.TimeOfDay.Hours + ":" + e.Timestamp.TimeOfDay.Minutes + ":" + e.Timestamp.TimeOfDay.Seconds + "      " + e.Status;
+            try
+            {
+                this.l_Driver_Status.Text = e.Timestamp.TimeOfDay.Hours + ":" + e.Timestamp.TimeOfDay.Minutes + ":" + e.Timestamp.TimeOfDay.Seconds + "      " + e.Status;
+            }
+            catch(System.InvalidOperationException ex)
+            {
+                l_Driver_Status.Invoke((Action)delegate
+                {
+                    l_Driver_Status.Text = e.Status;
+
+                });
+            }
         }
 
     }

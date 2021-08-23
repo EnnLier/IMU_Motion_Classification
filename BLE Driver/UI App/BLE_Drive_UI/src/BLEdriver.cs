@@ -237,7 +237,7 @@ namespace BLE_Drive_UI.src
         private void ConnectionStatusChangedEvent(BluetoothLEDevice sender, object args)
         {
             Console.WriteLine("Connection Status changed: " + sender.ConnectionStatus);
-            OnStatusChanged("sender.ConnectionStatus");
+            OnStatusChanged(sender.ConnectionStatus.ToString());
         }
 
         protected virtual void OnStatusChanged(String status)
