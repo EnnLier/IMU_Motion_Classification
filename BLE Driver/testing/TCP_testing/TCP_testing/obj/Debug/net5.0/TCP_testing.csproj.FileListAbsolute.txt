@@ -1,0 +1,16 @@
+C:\Users\Enno\Desktop\IMU_Motion_Classification\BLE Driver\testing\TCP_testing\TCP_testing\bin\Debug\net5.0\TCP_testing.exe
+C:\Users\Enno\Desktop\IMU_Motion_Classification\BLE Driver\testing\TCP_testing\TCP_testing\bin\Debug\net5.0\TCP_testing.deps.json
+C:\Users\Enno\Desktop\IMU_Motion_Classification\BLE Driver\testing\TCP_testing\TCP_testing\bin\Debug\net5.0\TCP_testing.runtimeconfig.json
+C:\Users\Enno\Desktop\IMU_Motion_Classification\BLE Driver\testing\TCP_testing\TCP_testing\bin\Debug\net5.0\TCP_testing.runtimeconfig.dev.json
+C:\Users\Enno\Desktop\IMU_Motion_Classification\BLE Driver\testing\TCP_testing\TCP_testing\bin\Debug\net5.0\TCP_testing.dll
+C:\Users\Enno\Desktop\IMU_Motion_Classification\BLE Driver\testing\TCP_testing\TCP_testing\bin\Debug\net5.0\ref\TCP_testing.dll
+C:\Users\Enno\Desktop\IMU_Motion_Classification\BLE Driver\testing\TCP_testing\TCP_testing\bin\Debug\net5.0\TCP_testing.pdb
+C:\Users\Enno\Desktop\IMU_Motion_Classification\BLE Driver\testing\TCP_testing\TCP_testing\obj\Debug\net5.0\TCP_testing.csproj.AssemblyReference.cache
+C:\Users\Enno\Desktop\IMU_Motion_Classification\BLE Driver\testing\TCP_testing\TCP_testing\obj\Debug\net5.0\TCP_testing.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Enno\Desktop\IMU_Motion_Classification\BLE Driver\testing\TCP_testing\TCP_testing\obj\Debug\net5.0\TCP_testing.AssemblyInfoInputs.cache
+C:\Users\Enno\Desktop\IMU_Motion_Classification\BLE Driver\testing\TCP_testing\TCP_testing\obj\Debug\net5.0\TCP_testing.AssemblyInfo.cs
+C:\Users\Enno\Desktop\IMU_Motion_Classification\BLE Driver\testing\TCP_testing\TCP_testing\obj\Debug\net5.0\TCP_testing.csproj.CoreCompileInputs.cache
+C:\Users\Enno\Desktop\IMU_Motion_Classification\BLE Driver\testing\TCP_testing\TCP_testing\obj\Debug\net5.0\TCP_testing.dll
+C:\Users\Enno\Desktop\IMU_Motion_Classification\BLE Driver\testing\TCP_testing\TCP_testing\obj\Debug\net5.0\ref\TCP_testing.dll
+C:\Users\Enno\Desktop\IMU_Motion_Classification\BLE Driver\testing\TCP_testing\TCP_testing\obj\Debug\net5.0\TCP_testing.pdb
+C:\Users\Enno\Desktop\IMU_Motion_Classification\BLE Driver\testing\TCP_testing\TCP_testing\obj\Debug\net5.0\TCP_testing.genruntimeconfig.cache
