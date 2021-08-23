@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Windows.Devices.Bluetooth.GenericAttributeProfile;
+using Windows.Devices.Bluetooth;
+using BLE_Drive_UI.Domain;
 
 namespace BLE_Drive_UI.Domain
 {
@@ -14,36 +17,37 @@ namespace BLE_Drive_UI.Domain
             Name = name;
             Id = id;
             canPair = canpair;
-            Service = new Guid();
-            HandlesOfCharacteristicsOfService = new Dictionary<Guid,Dictionary<Guid, ushort>>();
-            
-        }
-        private String printDictionary()
-        {
-            String toRet = String.Empty;
-            String charHandles = String.Empty;
-            int i = 0;
-            foreach (KeyValuePair< Guid,Dictionary<Guid, ushort>> serviceCharacterHandles in HandlesOfCharacteristicsOfService)
-            {
-                int k = 0;
-                foreach(KeyValuePair<Guid,ushort> characterHandles in serviceCharacterHandles.Value)
-                {
-                    charHandles = "Characteristic " + k + ": " + characterHandles.Key.ToString() + " Handle: " + characterHandles.Value;
-                    k++;
-                }
-                toRet += "Service " + i + ": " + serviceCharacterHandles.Key.ToString() + "\t" + charHandles + "\t";
-                //toRet = string.Format("Charachteristic {0} = {1}, Value = {2} \t",i, characterHandles.Key, handles);
-                i++;
-            }
-            return toRet;
-        }
+        //public GattCharacteristic BatteryCharacteristic { get; set; }
+        //Service = new Guid();
+        //HandlesOfCharacteristicsOfService = new Dictionary<Guid,Dictionary<Guid, ushort>>();
+
+    }
+        //private String printDictionary()
+        //{
+        //    String toRet = String.Empty;
+        //    String charHandles = String.Empty;
+        //    int i = 0;
+        //    foreach (KeyValuePair< Guid,Dictionary<Guid, ushort>> serviceCharacterHandles in HandlesOfCharacteristicsOfService)
+        //    {
+        //        int k = 0;
+        //        foreach(KeyValuePair<Guid,ushort> characterHandles in serviceCharacterHandles.Value)
+        //        {
+        //            charHandles = "Characteristic " + k + ": " + characterHandles.Key.ToString() + " Handle: " + characterHandles.Value;
+        //            k++;
+        //        }
+        //        toRet += "Service " + i + ": " + serviceCharacterHandles.Key.ToString() + "\t" + charHandles + "\t";
+        //        //toRet = string.Format("Charachteristic {0} = {1}, Value = {2} \t",i, characterHandles.Key, handles);
+        //        i++;
+        //    }
+        //    return toRet;
+        //}
         public String Name { get; }
         public String Id { get; }
         public bool canPair { get; }
-        public Guid Service { get;set;}
-        public Dictionary<Guid,Dictionary<Guid,ushort>> HandlesOfCharacteristicsOfService { get;set;}
+        //public Guid Service { get;set;}
+        //public Dictionary<Guid,Dictionary<Guid,ushort>> HandlesOfCharacteristicsOfService { get;set;}
 
-        public override string ToString() => $"(Name: {Name}, ID: {Id}, Can Pair: {canPair}), Service: {Service.ToString()}) , Characteristics and Handles: {printDictionary()})";
+        //public override string ToString() => $"(Name: {Name}, ID: {Id}, Can Pair: {canPair}), Service: {Service.ToString()}) , Characteristics and Handles: {printDictionary()})";
     }
 
     public static class BLEUUID

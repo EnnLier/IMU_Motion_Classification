@@ -95,9 +95,9 @@ namespace BLE_Drive_UI
             this.l_Driver_Status.Font = new System.Drawing.Font("Microsoft Sans Serif", 18F);
             this.l_Driver_Status.Location = new System.Drawing.Point(193, 489);
             this.l_Driver_Status.Name = "l_Driver_Status";
-            this.l_Driver_Status.Size = new System.Drawing.Size(79, 29);
+            this.l_Driver_Status.Size = new System.Drawing.Size(21, 29);
             this.l_Driver_Status.TabIndex = 3;
-            this.l_Driver_Status.Text = "Status";
+            this.l_Driver_Status.Text = "`";
             // 
             // mw_form
             // 

@@ -8,6 +8,7 @@ using Windows.Devices.Bluetooth;
 using BLE_Drive_UI.Domain;
 using System.Threading;
 using Windows.Storage.Streams;
+using Windows.Security.Cryptography;
 
 namespace BLE_Drive_UI.src
 {
@@ -18,7 +19,14 @@ namespace BLE_Drive_UI.src
 
 
         public bool _busy;
+        public UInt16 BatteryLevel;
 
+        private static UInt16 _packetsize = 9;
+        private Byte[] _incomingBuffer = new byte[20*_packetsize];
+        private String _stringBuffer = String.Empty;
+
+
+        
         public event EventHandler<statusChangedEventArgs> StatusChanged;
         public event EventHandler SelectedDeviceFound;
 
@@ -52,7 +60,7 @@ namespace BLE_Drive_UI.src
             }
             try
             {
-                OnStatusChanged("Connected");
+                OnStatusChanged("Connecting...");
 
 
                 GattDeviceServicesResult service_result = await _BLEDevice.GetGattServicesAsync();
@@ -68,43 +76,80 @@ namespace BLE_Drive_UI.src
 
                         foreach (GattCharacteristic characteristic in char_result.Characteristics)
                         {
+                            var properties = characteristic.CharacteristicProperties;
                             if (serv.Uuid == new Guid(BLEUUID.BLEUART_CUSTOM_UUID))
                             {
-                                BleuartCharacteristic = characteristic;
-                            }   
-                            else if(serv.Uuid == new Guid(BLEUUID.BLEUART_BATTERY_SERVICE))
-                            {
-                                BatteryCharacteristic = characteristic;
-                            }
-                            else
-                            {
-                                //Console.WriteLine("Unknown Charakteristic: " + serv.Uuid);
-                            }
-                                var properties = characteristic.CharacteristicProperties;
-
-                            if (properties.HasFlag(GattCharacteristicProperties.Notify))
-                            {
-                                try
+                                //BleuartCharacteristic = characteristic;
+                                if (properties.HasFlag(GattCharacteristicProperties.Notify))
                                 {
                                     GattCommunicationStatus status = await characteristic.WriteClientCharacteristicConfigurationDescriptorAsync(
                                         GattClientCharacteristicConfigurationDescriptorValue.Notify);
                                     if (status == GattCommunicationStatus.Success)
                                     {
-                                        characteristic.ValueChanged += Characteristic_ValueChanged;
-                                        OnStatusChanged("Services Found");
+                                        BleuartCharacteristic = characteristic;
+                                        Console.WriteLine("Success0");
                                     }
                                 }
-                                catch(System.Exception e)
+                            }   
+                            if(serv.Uuid == new Guid(BLEUUID.BLEUART_BATTERY_SERVICE))
+                            {
+                                if (properties.HasFlag(GattCharacteristicProperties.Notify))
                                 {
-                                    Console.WriteLine("Failed to notify enable: " + e);
+                                    GattCommunicationStatus status = await characteristic.WriteClientCharacteristicConfigurationDescriptorAsync(
+                                        GattClientCharacteristicConfigurationDescriptorValue.Notify);
+                                    if (status == GattCommunicationStatus.Success)
+                                    {
+                                        BatteryCharacteristic = characteristic;
+                                        Console.WriteLine("Success1");
+                                    }
                                 }
-                                
                             }
-                        }
+                            //if (properties.HasFlag(GattCharacteristicProperties.Notify))
+                            //{
+                            //    try
+                            //    {
+                            //        GattCommunicationStatus status = await characteristic.WriteClientCharacteristicConfigurationDescriptorAsync(
+                            //            GattClientCharacteristicConfigurationDescriptorValue.Notify);
+                            //        if (status == GattCommunicationStatus.Success)
+                            //        {
 
+                            //            ////var bat_uuid = new Byte[] { 0x9E, 0xCA, 0xDC, 0x24, 0x0E, 0xE5, 0xA9, 0xE0, 0x93, 0xF3, 0xA3, 0xB5, 0x04, 0x00, 0x40, 0x6E };
+                            //            ////Console.WriteLine(serv.Uuid);
+                            //            ////Console.WriteLine(BLEUUID.toGuid(bat_uuid));
+                            //            //characteristic.ValueChanged += Characteristic_ValueChanged;
+                            //        }
+                            //    }
+                            //    catch(System.Exception e)
+                            //    {
+                            //        Console.WriteLine("Failed to notify enable: " + e);
+                            //    }
+                            //}
+                        }
+                        
+                    }
+                    try
+                    {
+
+                        if (BatteryCharacteristic != null)
+                        {
+                            BatteryCharacteristic.ValueChanged += Characteristic_ValueChanged;
+                            Console.WriteLine("BLEBAS");
+                        }
+                        if (BleuartCharacteristic != null)
+                        {
+                            BleuartCharacteristic.ValueChanged += Characteristic_ValueChanged;
+                            Console.WriteLine("BLEUART");
+                        }
+                        else
+                        {
+                            OnStatusChanged("Failed to Connect");
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        OnStatusChanged("Services not found");
                     }
                 }
-
             }
             catch(Exception e)
             {
@@ -120,17 +165,58 @@ namespace BLE_Drive_UI.src
         private void Characteristic_ValueChanged(GattCharacteristic sender, GattValueChangedEventArgs args)
         {
             var reader = DataReader.FromBuffer(args.CharacteristicValue);
-            Console.WriteLine("Attribute :" +sender.Service.AttributeHandle);
+            if (BatteryCharacteristic == null || BleuartCharacteristic == null) { Console.WriteLine("isNull"); return; }
+            if (sender.Service.AttributeHandle == BatteryCharacteristic.Service.AttributeHandle)
+            {
+                //var reader = DataReader.FromBuffer(args.CharacteristicValue);
+                BatteryLevel = reader.ReadUInt16();
+                Console.WriteLine("fdjlksjf");
+            }
+            if(sender.Service.AttributeHandle == BleuartCharacteristic.Service.AttributeHandle)
+            {
+                //var reader = DataReader.FromBuffer(args.CharacteristicValue);
+                var buff = new Byte[9];
+                var sBuff = String.Empty;
+                reader.ReadBytes(buff);
 
-            Console.WriteLine(reader.ReadString(args.CharacteristicValue.Length));
-            
+                _stringBuffer += Encoding.Default.GetString(buff);
+
+                if(_stringBuffer.Length >= 180)
+                {
+                    Console.WriteLine(_stringBuffer.Length);
+                    Console.WriteLine(_stringBuffer);
+                    _stringBuffer = String.Empty;
+                }
+                //Console.WriteLine("Buffer: " + Encoding.Default.GetString(buff));
+                //Console.WriteLine(_incomingBuffer.Length);
+
+            }
+
+            //var reader = DataReader.FromBuffer(args.CharacteristicValue);
+
+            //Console.WriteLine("LEngth: " + args.CharacteristicValue.Length);
+            //String tmp = reader.ReadString(args.CharacteristicValue.Length);
+            //Console.WriteLine();
+            //Console.WriteLine(Encoding.Default.GetString(reader.));
+
         }
 
-        private async void WriteToBLEDevice(Byte[] data)
+        public async void WriteToBLEDevice(Byte[] data)
         {
             var writer = new DataWriter();
             writer.ByteOrder = ByteOrder.LittleEndian;
             writer.WriteBytes(data);
+            GattCommunicationStatus result = await BleuartCharacteristic.WriteValueAsync(writer.DetachBuffer());
+            if (result == GattCommunicationStatus.Success)
+            {
+                Console.WriteLine(" Successfully wrote to device");
+            }
+        }
+        public async void WriteToBLEDevice(String data)
+        {
+            var writer = new DataWriter();
+            writer.ByteOrder = ByteOrder.LittleEndian;
+            writer.WriteString(data);
             GattCommunicationStatus result = await BleuartCharacteristic.WriteValueAsync(writer.DetachBuffer());
             if (result == GattCommunicationStatus.Success)
             {
@@ -145,26 +231,13 @@ namespace BLE_Drive_UI.src
 
         private void GattServicesChangedEvent(BluetoothLEDevice sender, object args)
         {
-            //Console.WriteLine("GattServices changed: ");
-            //GattDeviceServicesResult result = await _BLEDevice.GetGattServicesAsync();
-            //Guid filteruuid = new Guid(BLEUUID.BLEUART_UUID_SERVICE);
 
-            //if (result.Status == GattCommunicationStatus.Success)
-            //{
-            //    foreach (GattDeviceService service in result.Services)
-            //    {
-            //        //if (BLEUUID)
-            //        //{
-            //        //    OnStatusChanged("UUID Found!");
-            //        //}
-            //        Console.WriteLine("GattServices changed: " + service.Uuid);
-            //    }
-            //}
         }
 
         private void ConnectionStatusChangedEvent(BluetoothLEDevice sender, object args)
         {
             Console.WriteLine("Connection Status changed: " + sender.ConnectionStatus);
+            OnStatusChanged("sender.ConnectionStatus");
         }
 
         protected virtual void OnStatusChanged(String status)

@@ -71,5 +71,6 @@ namespace BLE_Drive_UI
         {
             this.l_Driver_Status.Text = e.Timestamp.TimeOfDay.Hours + ":" + e.Timestamp.TimeOfDay.Minutes + ":" + e.Timestamp.TimeOfDay.Seconds + "      " + e.Status;
         }
+
     }
 }
