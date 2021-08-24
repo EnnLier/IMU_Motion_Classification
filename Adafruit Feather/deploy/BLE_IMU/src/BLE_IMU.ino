@@ -33,7 +33,7 @@ void setup()
   bno.setExtCrystalUse(true);
 
   Bluefruit.autoConnLed(true);
-  Bluefruit.configPrphBandwidth(BANDWIDTH_NORMAL);
+  Bluefruit.configPrphBandwidth(BANDWIDTH_HIGH);
   Bluefruit.begin(1,0);
   Bluefruit.setTxPower(0);  
   Bluefruit.setName(HOST_NAME);
@@ -54,7 +54,7 @@ void setup()
   blebas.begin();
   blebas.notify(100);
 
-  dataTimer.begin(50,SendData,0,true);
+  dataTimer.begin(10,SendData,0,true);
 
   Serial.println("Advertising");
   advertise();
@@ -97,6 +97,9 @@ void onDisconnect(uint16_t conn_handle, uint8_t reason)
   (void) reason;
 
   dataTimer.stop();
+
+  delay(10);
+  digitalWrite(LED_RED,0);
 
   Serial.println();
   Serial.print("Disconnected, reason = 0x"); Serial.println(reason, HEX);
