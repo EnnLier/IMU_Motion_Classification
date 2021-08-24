@@ -24,9 +24,8 @@ namespace BLE_Drive_UI
             _BLEdriver.StatusChanged += BLEdriver_StatusChanged;
             InitializeComponent();
             
+            pb_connect_TCP.Enabled = false;
         }
-
-
 
         private void Mainwindow_Load(object sender, EventArgs e)
         {
@@ -72,16 +71,25 @@ namespace BLE_Drive_UI
             try
             {
                 this.l_Driver_Status.Text = e.Timestamp.TimeOfDay.Hours + ":" + e.Timestamp.TimeOfDay.Minutes + ":" + e.Timestamp.TimeOfDay.Seconds + "      " + e.Status;
+                this.pb_connect_TCP.Enabled = _BLEdriver.Connected == true ? true : false;
             }
-            catch(System.InvalidOperationException ex)
+            catch(System.InvalidOperationException)
             {
                 l_Driver_Status.Invoke((Action)delegate
                 {
                     l_Driver_Status.Text = e.Status;
-
+                });
+                pb_connect_TCP.Invoke((Action)delegate
+                {
+                    this.pb_connect_TCP.Enabled = _BLEdriver.Connected == true ? true : false;
                 });
             }
+            
         }
 
+        private void pb_connect_TCP_Click(object sender, EventArgs e)
+        {
+            _BLEdriver.StartClient();
+        }
     }
 }

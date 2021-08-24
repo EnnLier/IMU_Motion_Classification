@@ -18,7 +18,7 @@ namespace BLE_Drive_UI.src
         private BluetoothLEDevice _BLEDevice;
         public BLEdevice _deviceInformation { get; set; }
 
-
+        public bool Connected;
         public bool _busy;
         public UInt16 BatteryLevel;
 
@@ -41,10 +41,12 @@ namespace BLE_Drive_UI.src
         public BLEdriver()
         {
             //ClearStringBuffer();
+            Connected = false;
         }
 
-        private void StartClient()
+        public void StartClient()
         {
+            if(_sender != null) { return;}
             byte[] bytes = new byte[1024];
             try
             {
@@ -72,7 +74,7 @@ namespace BLE_Drive_UI.src
                     //byte[] msg = Encoding.ASCII.GetBytes("This is a test<EOF>");
                     byte[] msg = Encoding.ASCII.GetBytes("This is a test<EOF>");
                     // Send the data through the socket.    
-                    int bytesSent = _sender.Send(msg);
+                    //int bytesSent = _sender.Send(msg);
                     // Receive the response from the remote device.    
                     //int bytesRec = _sender.Receive(bytes);
                     //Console.WriteLine("Echoed test = {0}",Encoding.ASCII.GetString(bytes, 0, bytesRec));
@@ -103,21 +105,39 @@ namespace BLE_Drive_UI.src
             // Release the socket.    
             _sender.Shutdown(SocketShutdown.Both);
             _sender.Close();
+            _sender.Dispose();
         }
 
         private void sendData(String data)
         {
-            //byte[] bytes = new byte[180];
+            try
+            {
+                if (_sender.Connected)
+                {
+                    byte[] msg = Encoding.ASCII.GetBytes(data);
 
-            byte[] msg = Encoding.ASCII.GetBytes(data);
+                    int bytesSent = _sender.Send(msg);
+                }
+            }
+            catch(System.Net.Sockets.SocketException e)
+            {
+                CloseClient();
+            }
+        }
 
-            // Send the data through the socket.    
-            int bytesSent = _sender.Send(msg);
-
-            // Receive the response from the remote device.    
-            //int bytesRec = _sender.Receive(bytes);
-            //Console.WriteLine("Echoed test = {0}",
-            //    Encoding.ASCII.GetString(bytes, 0, bytesRec));
+        private void sendData(Byte[] data)
+        {
+            try
+            {
+                if (_sender.Connected)
+                {
+                    int bytesSent = _sender.Send(data);
+                }
+            }
+            catch(System.Net.Sockets.SocketException e)
+            {
+                CloseClient();
+            }
         }
 
         public async void ConnectDevice(BLEdevice deviceInformation)
@@ -189,7 +209,6 @@ namespace BLE_Drive_UI.src
                 {
                     if (_deviceInformation.BatteryCharacteristic != null && _deviceInformation.BLEuartCharacteristic != null)
                     {
-                        StartClient();
                         _deviceInformation.BatteryCharacteristic.ValueChanged += Characteristic_ValueChanged;
                         _deviceInformation.BLEuartCharacteristic.ValueChanged += Characteristic_ValueChanged;
                     }
@@ -208,33 +227,22 @@ namespace BLE_Drive_UI.src
 
         }
 
-        private String ClearStringBuffer(String stringBuffer)
-        {
-            stringBuffer = String.Empty;
-            return Encoding.Default.GetString(new Byte[] { 0x55});
-        }
-
-        private String ToOutgoingPacket(String stringBuffer)
-        {
-            stringBuffer.Insert(0 ,Encoding.Default.GetString(new Byte[] { 0x55 }));
-            stringBuffer += "<EOF>";
-            return stringBuffer;
-        }
 
         private void Characteristic_ValueChanged(GattCharacteristic sender, GattValueChangedEventArgs args)
         {
             var reader = DataReader.FromBuffer(args.CharacteristicValue);
-            if (_deviceInformation.BatteryCharacteristic == null || _deviceInformation.BLEuartCharacteristic == null) { Console.WriteLine("isNull"); return; }
+            if (_deviceInformation.BatteryCharacteristic == null || _deviceInformation.BLEuartCharacteristic == null || _sender == null) { return; }
             if (sender.Service.AttributeHandle == _deviceInformation.BatteryCharacteristic.Service.AttributeHandle)
             {
                 BatteryLevel = reader.ReadUInt16();
             }
             if(sender.Service.AttributeHandle == _deviceInformation.BLEuartCharacteristic.Service.AttributeHandle)
             {
-                var buff = new Byte[9];
+                var buff = new Byte[9];                
                 reader.ReadBytes(buff);
 
-                sendData(ToOutgoingPacket(Encoding.Default.GetString(buff)));
+                sendData(ToOutgoingPacket(buff,9));
+                //sendData(ToOutgoingPacket(Encoding.Default.GetString(buff)));
 
                 //_stringBuffer += Encoding.Default.GetString(buff);
 
@@ -250,13 +258,6 @@ namespace BLE_Drive_UI.src
                 //Console.WriteLine(_incomingBuffer.Length);
 
             }
-
-            //var reader = DataReader.FromBuffer(args.CharacteristicValue);
-
-            //Console.WriteLine("LEngth: " + args.CharacteristicValue.Length);
-            //String tmp = reader.ReadString(args.CharacteristicValue.Length);
-            //Console.WriteLine();
-            //Console.WriteLine(Encoding.Default.GetString(reader.));
 
         }
 
@@ -284,6 +285,30 @@ namespace BLE_Drive_UI.src
             }
         }
 
+        private String ClearStringBuffer(String stringBuffer)
+        {
+            stringBuffer = String.Empty;
+            return Encoding.Default.GetString(new Byte[] { 0x55 });
+        }
+
+        private String ToOutgoingPacket(String stringBuffer)
+        {
+            stringBuffer.Insert(0, Encoding.Default.GetString(new Byte[] { 0x55 }));
+            //stringBuffer.Insert(11, Encoding.Default.GetString('\r'));
+            stringBuffer += '\r';
+            stringBuffer += '\n';
+            return stringBuffer;
+        }
+
+        private Byte[] ToOutgoingPacket(Byte[] stringBuffer, UInt16 len)
+        {
+            var res = new Byte[len+1];
+            res[0] = 0x55;
+            stringBuffer.CopyTo(res, 1);
+    
+            return res;
+        }
+
         private void NameChangedEvent(BluetoothLEDevice sender, object args)
         {
             Console.WriteLine("Name changed: " + sender.Name);
@@ -297,6 +322,7 @@ namespace BLE_Drive_UI.src
         private void ConnectionStatusChangedEvent(BluetoothLEDevice sender, object args)
         {
             Console.WriteLine("Connection Status changed: " + sender.ConnectionStatus);
+            Connected = sender.ConnectionStatus.ToString() == "Connected" ? true : false;
             OnStatusChanged(sender.ConnectionStatus.ToString());
         }
 

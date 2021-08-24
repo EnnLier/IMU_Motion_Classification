@@ -36,13 +36,14 @@ namespace BLE_Drive_UI
             this.canConnect = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.pb_connect = new System.Windows.Forms.Button();
             this.l_Driver_Status = new System.Windows.Forms.Label();
+            this.pb_connect_TCP = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // pb_Refresh_List
             // 
-            this.pb_Refresh_List.Location = new System.Drawing.Point(30, 30);
+            this.pb_Refresh_List.Location = new System.Drawing.Point(21, 12);
             this.pb_Refresh_List.Name = "pb_Refresh_List";
-            this.pb_Refresh_List.Size = new System.Drawing.Size(75, 23);
+            this.pb_Refresh_List.Size = new System.Drawing.Size(97, 29);
             this.pb_Refresh_List.TabIndex = 0;
             this.pb_Refresh_List.Text = "Refresh";
             this.pb_Refresh_List.UseVisualStyleBackColor = true;
@@ -81,11 +82,11 @@ namespace BLE_Drive_UI
             // 
             // pb_connect
             // 
-            this.pb_connect.Location = new System.Drawing.Point(30, 71);
+            this.pb_connect.Location = new System.Drawing.Point(21, 70);
             this.pb_connect.Name = "pb_connect";
-            this.pb_connect.Size = new System.Drawing.Size(75, 23);
+            this.pb_connect.Size = new System.Drawing.Size(97, 30);
             this.pb_connect.TabIndex = 2;
-            this.pb_connect.Text = "Connect";
+            this.pb_connect.Text = "Connect BT";
             this.pb_connect.UseVisualStyleBackColor = true;
             this.pb_connect.Click += new System.EventHandler(this.pb_connect_Click);
             // 
@@ -99,9 +100,20 @@ namespace BLE_Drive_UI
             this.l_Driver_Status.TabIndex = 3;
             this.l_Driver_Status.Text = "`";
             // 
+            // pb_connect_TCP
+            // 
+            this.pb_connect_TCP.Location = new System.Drawing.Point(21, 132);
+            this.pb_connect_TCP.Name = "pb_connect_TCP";
+            this.pb_connect_TCP.Size = new System.Drawing.Size(97, 28);
+            this.pb_connect_TCP.TabIndex = 4;
+            this.pb_connect_TCP.Text = "Connect TCP";
+            this.pb_connect_TCP.UseVisualStyleBackColor = true;
+            this.pb_connect_TCP.Click += new System.EventHandler(this.pb_connect_TCP_Click);
+            // 
             // mw_form
             // 
             this.ClientSize = new System.Drawing.Size(923, 551);
+            this.Controls.Add(this.pb_connect_TCP);
             this.Controls.Add(this.l_Driver_Status);
             this.Controls.Add(this.pb_connect);
             this.Controls.Add(this.lv_Device_List);
@@ -122,6 +134,7 @@ namespace BLE_Drive_UI
         private System.Windows.Forms.ColumnHeader canConnect;
         private System.Windows.Forms.Button pb_connect;
         private System.Windows.Forms.Label l_Driver_Status;
+        private System.Windows.Forms.Button pb_connect_TCP;
     }
 }
 
