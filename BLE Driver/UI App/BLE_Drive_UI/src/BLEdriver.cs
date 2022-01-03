@@ -9,6 +9,7 @@ using BLE_Drive_UI.Domain;
 using System.Threading;
 using Windows.Storage.Streams;
 using System.Net;
+using System.IO;
 using System.Net.Sockets;
 
 namespace BLE_Drive_UI.src
@@ -16,18 +17,21 @@ namespace BLE_Drive_UI.src
     class BLEdriver
     {
         private BluetoothLEDevice _BLEDevice;
-        public BLEdevice _deviceInformation { get; set; }
+        public BLEdevice _deviceInformation { get; set; } 
+        public bool isSaving { get; set;}
 
         public bool Connected;
         public bool _busy;
         public UInt16 BatteryLevel;
 
-        private static UInt16 _packetsize = 9;
-        private Byte[] _incomingBuffer = new byte[20*_packetsize];
-        private String _stringBuffer = String.Empty;
+        private static UInt16 _packetsize = 16;
+        //private Byte[] _Buffer1 = new byte[20*_packetsize];
+        //private Byte[] _Buffer2 = new byte[20 * _packetsize];
+        private String _stringBuffer1 = String.Empty;
+        private String _stringBuffer2 = String.Empty;
 
 
-        
+
         public event EventHandler<statusChangedEventArgs> StatusChanged;
         public event EventHandler SelectedDeviceFound;
 
@@ -37,11 +41,15 @@ namespace BLE_Drive_UI.src
         private IPEndPoint _remoteEP;
         private Socket _sender;
 
+        //private doubleBuffer _doubleBuffer;
+        public doubleBuffer _doubleBuffer;
 
         public BLEdriver()
         {
             //ClearStringBuffer();
             Connected = false;
+            isSaving = false;
+            _doubleBuffer = new doubleBuffer();
         }
 
         public void StartClient()
@@ -96,6 +104,7 @@ namespace BLE_Drive_UI.src
             }
             catch (Exception e)
             {
+
                 Console.WriteLine(e.ToString());
             }
         }
@@ -107,6 +116,7 @@ namespace BLE_Drive_UI.src
             _sender.Close();
             _sender.Dispose();
         }
+
 
         private void sendData(String data)
         {
@@ -231,17 +241,28 @@ namespace BLE_Drive_UI.src
         private void Characteristic_ValueChanged(GattCharacteristic sender, GattValueChangedEventArgs args)
         {
             var reader = DataReader.FromBuffer(args.CharacteristicValue);
-            if (_deviceInformation.BatteryCharacteristic == null || _deviceInformation.BLEuartCharacteristic == null || _sender == null) { return; }
+            if (_deviceInformation.BatteryCharacteristic == null || _deviceInformation.BLEuartCharacteristic == null) { return; }
             if (sender.Service.AttributeHandle == _deviceInformation.BatteryCharacteristic.Service.AttributeHandle)
             {
-                BatteryLevel = reader.ReadUInt16();
+                BatteryLevel = reader.ReadByte();
+                Console.WriteLine(BatteryLevel);
             }
             if(sender.Service.AttributeHandle == _deviceInformation.BLEuartCharacteristic.Service.AttributeHandle)
             {
-                var buff = new Byte[9];                
+                var buff = new Byte[_packetsize];                
                 reader.ReadBytes(buff);
 
-                sendData(ToOutgoingPacket(buff,9));
+                if (_sender != null)
+                {
+                    sendData(ToOutgoingPacket(buff, _packetsize));
+                }
+                if (isSaving)
+                {
+                    _doubleBuffer.addData(buff);
+                }
+               
+
+
                 //sendData(ToOutgoingPacket(Encoding.Default.GetString(buff)));
 
                 //_stringBuffer += Encoding.Default.GetString(buff);
@@ -348,10 +369,112 @@ namespace BLE_Drive_UI.src
         }
 
 
+
     }
     public class statusChangedEventArgs : EventArgs
     {
         public String Status { get; set; }
         public DateTime Timestamp { get; set; }
+    }
+
+    public class doubleBuffer
+    {
+        //private String[][] _Buffer1 = new String[20];
+        //private String[] Buffer1 = new String;
+        //private String[] Buffer2 = String.Empty;
+
+        private static List<String> Buffer1 = new List<String>();
+        private static List<String> Buffer2 = new List<String>();
+        private static bool _oneActive = true;
+        private static bool _twoActive = false;
+
+        private static String _path;
+        private static int _numOfEntries;
+
+        public doubleBuffer()
+        {
+           _path = @"C:\Users\Enno-LT\Desktop\IMU_Motion_Classification\BLE Driver\UI App\BLE_Drive_UI\Data\";
+            _numOfEntries = 200;
+            _oneActive = true;
+            _twoActive = false;
+    }
+
+        public async void addData(byte[] data)
+        {
+            var scalingFactor = (1.00 / (1 << 14));
+            var id = data[0]-48;
+            var calib = data[1];
+            //Console.WriteLine(calib);
+            float quatW, quatX, quatY, quatZ;
+            quatW = (float)scalingFactor * ((Int16)(data[2] | (data[3] << 8)));
+            quatX = (float)scalingFactor * ((Int16)(data[4] | (data[5] << 8)));
+            quatY = (float)scalingFactor * ((Int16)(data[6] | (data[7] << 8)));
+            quatZ = (float)scalingFactor * ((Int16)(data[8] | (data[9] << 8)));
+
+            var off = 10;
+            scalingFactor = (1.00 / 100.0);// 1m/s^2 = 100 LSB 
+            float x_a, y_a, z_a;
+            x_a = (float)scalingFactor * ((Int16)(data[off + 0] | (data[off + 1] << 8)));
+            y_a = (float)scalingFactor * ((Int16)(data[off + 2] | (data[off + 3] << 8)));
+            z_a = (float)scalingFactor * ((Int16)(data[off + 4] | (data[off + 5] << 8)));
+
+
+
+
+
+            //var str = System.Text.Encoding.Default.GetString(data);
+            var str = id.ToString() + " " + calib.ToString() + " " + quatW.ToString("0.0000") + " " + quatX.ToString("0.0000") + " " + quatY.ToString("0.0000") + " " + quatZ.ToString("0.0000") + " "
+                + x_a.ToString("0.0000") + " " + y_a.ToString("0.0000") + " " + z_a.ToString("0.0000");
+          
+            var t = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss.fffffff");
+            String toSave = t + " " + str; // + "\n";
+
+            //Console.WriteLine("Add from " + Thread.CurrentThread.ManagedThreadId);
+
+            if (_oneActive) // Buffer 1 active
+            {
+                //Console.WriteLine(Buffer1.Count);
+                Buffer1.Add(toSave);
+                if (Buffer1.Count >= _numOfEntries)
+                {
+                    await save();   
+                    _twoActive = true;
+                    _oneActive = false;
+                }
+            }
+            else if (_twoActive)
+            {
+                Buffer2.Add(toSave);
+                if (Buffer2.Count >= _numOfEntries)
+                {
+                    await save();
+                    _oneActive = true;
+                    _twoActive = false;
+                }
+            }
+        }
+
+        static async Task save()
+        {
+            Console.WriteLine("Save from " + Thread.CurrentThread.ManagedThreadId);
+            String name = DateTime.Now.ToString("yyyy_MM_dd_HH_mm_ss");
+            if (_oneActive)
+            {
+                await Task.Run(() => {
+                    var buf = Buffer1.ToArray();
+                    Buffer1.Clear();
+                    File.WriteAllLines(_path + name + ".txt", buf);
+                });
+                
+            }
+            else if (_twoActive)
+            {
+                await Task.Run(() => {
+                    var buf = Buffer2.ToArray();
+                    Buffer2.Clear();
+                    File.WriteAllLines(_path + name + ".txt", buf);
+                });
+            }
+        }
     }
 }

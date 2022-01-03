@@ -39,6 +39,7 @@ namespace BLE_Drive_UI
             {
                 foreach (BLEdevice device in _BLEwatcher.deviceList)
                 {
+                    if (String.IsNullOrEmpty(device.Name)) continue;
                     var row = new String[] { device.Name, device.Id, device.canPair.ToString() };
                     ListViewItem item = new ListViewItem(row);
                     item.Tag = device;
@@ -90,6 +91,16 @@ namespace BLE_Drive_UI
         private void pb_connect_TCP_Click(object sender, EventArgs e)
         {
             _BLEdriver.StartClient();
+        }
+
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+            if(this.checkBox1.Checked)
+                _BLEdriver.isSaving = true;
+            else
+            {
+                _BLEdriver.isSaving = false;
+            }
         }
     }
 }

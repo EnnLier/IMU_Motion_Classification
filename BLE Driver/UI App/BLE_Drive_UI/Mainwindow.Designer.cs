@@ -37,6 +37,7 @@ namespace BLE_Drive_UI
             this.pb_connect = new System.Windows.Forms.Button();
             this.l_Driver_Status = new System.Windows.Forms.Label();
             this.pb_connect_TCP = new System.Windows.Forms.Button();
+            this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // pb_Refresh_List
@@ -102,7 +103,7 @@ namespace BLE_Drive_UI
             // 
             // pb_connect_TCP
             // 
-            this.pb_connect_TCP.Location = new System.Drawing.Point(21, 132);
+            this.pb_connect_TCP.Location = new System.Drawing.Point(21, 154);
             this.pb_connect_TCP.Name = "pb_connect_TCP";
             this.pb_connect_TCP.Size = new System.Drawing.Size(97, 28);
             this.pb_connect_TCP.TabIndex = 4;
@@ -110,9 +111,21 @@ namespace BLE_Drive_UI
             this.pb_connect_TCP.UseVisualStyleBackColor = true;
             this.pb_connect_TCP.Click += new System.EventHandler(this.pb_connect_TCP_Click);
             // 
+            // checkBox1
+            // 
+            this.checkBox1.AutoSize = true;
+            this.checkBox1.Location = new System.Drawing.Point(21, 106);
+            this.checkBox1.Name = "checkBox1";
+            this.checkBox1.Size = new System.Drawing.Size(79, 17);
+            this.checkBox1.TabIndex = 5;
+            this.checkBox1.Text = "Save to file";
+            this.checkBox1.UseVisualStyleBackColor = true;
+            this.checkBox1.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged);
+            // 
             // mw_form
             // 
             this.ClientSize = new System.Drawing.Size(923, 551);
+            this.Controls.Add(this.checkBox1);
             this.Controls.Add(this.pb_connect_TCP);
             this.Controls.Add(this.l_Driver_Status);
             this.Controls.Add(this.pb_connect);
@@ -135,6 +148,7 @@ namespace BLE_Drive_UI
         private System.Windows.Forms.Button pb_connect;
         private System.Windows.Forms.Label l_Driver_Status;
         private System.Windows.Forms.Button pb_connect_TCP;
+        private System.Windows.Forms.CheckBox checkBox1;
     }
 }
 
