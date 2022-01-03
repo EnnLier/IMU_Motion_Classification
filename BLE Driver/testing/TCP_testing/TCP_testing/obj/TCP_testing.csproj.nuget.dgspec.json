@@ -1,23 +1,24 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Enno\\Desktop\\IMU_Motion_Classification\\BLE Driver\\testing\\TCP_testing\\TCP_testing\\TCP_testing.csproj": {}
+    "C:\\Users\\Enno-LT\\Desktop\\IMU_Motion_Classification\\BLE Driver\\testing\\TCP_testing\\TCP_testing\\TCP_testing.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Enno\\Desktop\\IMU_Motion_Classification\\BLE Driver\\testing\\TCP_testing\\TCP_testing\\TCP_testing.csproj": {
+    "C:\\Users\\Enno-LT\\Desktop\\IMU_Motion_Classification\\BLE Driver\\testing\\TCP_testing\\TCP_testing\\TCP_testing.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Enno\\Desktop\\IMU_Motion_Classification\\BLE Driver\\testing\\TCP_testing\\TCP_testing\\TCP_testing.csproj",
+        "projectUniqueName": "C:\\Users\\Enno-LT\\Desktop\\IMU_Motion_Classification\\BLE Driver\\testing\\TCP_testing\\TCP_testing\\TCP_testing.csproj",
         "projectName": "TCP_testing",
-        "projectPath": "C:\\Users\\Enno\\Desktop\\IMU_Motion_Classification\\BLE Driver\\testing\\TCP_testing\\TCP_testing\\TCP_testing.csproj",
-        "packagesPath": "C:\\Users\\Enno\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Enno\\Desktop\\IMU_Motion_Classification\\BLE Driver\\testing\\TCP_testing\\TCP_testing\\obj\\",
+        "projectPath": "C:\\Users\\Enno-LT\\Desktop\\IMU_Motion_Classification\\BLE Driver\\testing\\TCP_testing\\TCP_testing\\TCP_testing.csproj",
+        "packagesPath": "C:\\Users\\Enno-LT\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Enno-LT\\Desktop\\IMU_Motion_Classification\\BLE Driver\\testing\\TCP_testing\\TCP_testing\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages",
+          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
         ],
         "configFilePaths": [
-          "C:\\Users\\Enno\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Enno-LT\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -58,7 +59,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.400\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.404\\RuntimeIdentifierGraph.json"
         }
       }
     }

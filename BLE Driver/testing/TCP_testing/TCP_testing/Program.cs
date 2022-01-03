@@ -9,7 +9,9 @@ namespace TCP_testing
     {
         public static int Main(String[] args)
         {
-            StartServer();
+            //StartServer();
+            var t = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss.fffffff");
+            Console.WriteLine(t);
             return 0;
         }
 
