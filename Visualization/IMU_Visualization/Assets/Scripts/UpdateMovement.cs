@@ -49,7 +49,7 @@ public class UpdateMovement : MonoBehaviour
 
 
             var scalingFactor = (1.00 / (1 << 14));
-
+                
             float quatW, quatX, quatY, quatZ;
             quatW = (float)scalingFactor * ((Int16)(_buffer[2] | (_buffer[3] << 8)));
             quatX = (float)scalingFactor * ((Int16)(_buffer[4] | (_buffer[5] << 8)));
