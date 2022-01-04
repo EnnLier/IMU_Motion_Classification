@@ -38,6 +38,7 @@ namespace BLE_Drive_UI
             this.l_Driver_Status = new System.Windows.Forms.Label();
             this.pb_connect_TCP = new System.Windows.Forms.Button();
             this.checkBox1 = new System.Windows.Forms.CheckBox();
+            this.cb_StreamTCP = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // pb_Refresh_List
@@ -122,9 +123,21 @@ namespace BLE_Drive_UI
             this.checkBox1.UseVisualStyleBackColor = true;
             this.checkBox1.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged);
             // 
+            // cb_StreamTCP
+            // 
+            this.cb_StreamTCP.AutoSize = true;
+            this.cb_StreamTCP.Location = new System.Drawing.Point(21, 130);
+            this.cb_StreamTCP.Name = "cb_StreamTCP";
+            this.cb_StreamTCP.Size = new System.Drawing.Size(83, 17);
+            this.cb_StreamTCP.TabIndex = 6;
+            this.cb_StreamTCP.Text = "Stream TCP";
+            this.cb_StreamTCP.UseVisualStyleBackColor = true;
+            this.cb_StreamTCP.CheckedChanged += new System.EventHandler(this.cb_StreamTCP_CheckedChanged);
+            // 
             // mw_form
             // 
             this.ClientSize = new System.Drawing.Size(923, 551);
+            this.Controls.Add(this.cb_StreamTCP);
             this.Controls.Add(this.checkBox1);
             this.Controls.Add(this.pb_connect_TCP);
             this.Controls.Add(this.l_Driver_Status);
@@ -149,6 +162,7 @@ namespace BLE_Drive_UI
         private System.Windows.Forms.Label l_Driver_Status;
         private System.Windows.Forms.Button pb_connect_TCP;
         private System.Windows.Forms.CheckBox checkBox1;
+        private System.Windows.Forms.CheckBox cb_StreamTCP;
     }
 }
 

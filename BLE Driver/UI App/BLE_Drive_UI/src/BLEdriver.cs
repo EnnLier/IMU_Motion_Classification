@@ -19,6 +19,8 @@ namespace BLE_Drive_UI.src
         private BluetoothLEDevice _BLEDevice;
         public BLEdevice _deviceInformation { get; set; } 
         public bool isSaving { get; set;}
+        public bool isStreaming { get; set; }
+
 
         public bool Connected;
         public bool _busy;
@@ -49,6 +51,7 @@ namespace BLE_Drive_UI.src
             //ClearStringBuffer();
             Connected = false;
             isSaving = false;
+            isStreaming = false;
             _doubleBuffer = new doubleBuffer();
         }
 
@@ -86,19 +89,23 @@ namespace BLE_Drive_UI.src
                     // Receive the response from the remote device.    
                     //int bytesRec = _sender.Receive(bytes);
                     //Console.WriteLine("Echoed test = {0}",Encoding.ASCII.GetString(bytes, 0, bytesRec));
+                    OnStatusChanged("TCP Client Connected");
 
                 }
                 catch (ArgumentNullException ane)
                 {
                     Console.WriteLine("ArgumentNullException : {0}", ane.ToString());
+                    OnStatusChanged("TCP Client Connection Failed");
                 }
                 catch (SocketException se)
                 {
                     Console.WriteLine("SocketException : {0}", se.ToString());
+                    OnStatusChanged("TCP Client Connection Failed");
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine("Unexpected exception : {0}", e.ToString());
+                    OnStatusChanged("TCP Client Connection Failed");
                 }
 
             }
@@ -106,15 +113,20 @@ namespace BLE_Drive_UI.src
             {
 
                 Console.WriteLine(e.ToString());
+                OnStatusChanged("TCP Client Connection Failed");
             }
         }
 
-        private void CloseClient()
+        public void CloseClient()
         {
             // Release the socket.    
-            _sender.Shutdown(SocketShutdown.Both);
-            _sender.Close();
-            _sender.Dispose();
+            if (_sender != null)
+            { 
+                _sender.Shutdown(SocketShutdown.Both);
+                _sender.Close();
+                _sender.Dispose();
+                OnStatusChanged("TCP Client Connection Closed");
+            }
         }
 
 

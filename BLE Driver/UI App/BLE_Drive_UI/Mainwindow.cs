@@ -102,5 +102,19 @@ namespace BLE_Drive_UI
                 _BLEdriver.isSaving = false;
             }
         }
+
+        private void cb_StreamTCP_CheckedChanged(object sender, EventArgs e)
+        {
+            if (this.cb_StreamTCP.Checked)
+            { 
+                _BLEdriver.StartClient();
+                _BLEdriver.isStreaming = true;
+            } 
+            else
+            {
+                _BLEdriver.CloseClient();
+                _BLEdriver.isStreaming = false;
+            }
+        }
     }
 }
