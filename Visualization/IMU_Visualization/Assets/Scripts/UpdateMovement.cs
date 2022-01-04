@@ -36,6 +36,7 @@ public class UpdateMovement : MonoBehaviour
             {
                 if(_listener.IncomingDataBuffer != null) {_buffer = _listener.IncomingDataBuffer; }
                 else return;
+                if (_listener.IncomingDataBuffer.Length < TCPListener._datasize) return;
             }
         }
         catch(Exception e)
@@ -45,16 +46,18 @@ public class UpdateMovement : MonoBehaviour
         }
         try
         {
-            _calib = (uint)_buffer[1];
+
+            var id = (uint)_buffer[1] - 48;
+            _calib = (uint)_buffer[2]-48;
 
 
             var scalingFactor = (1.00 / (1 << 14));
                 
             float quatW, quatX, quatY, quatZ;
-            quatW = (float)scalingFactor * ((Int16)(_buffer[2] | (_buffer[3] << 8)));
-            quatX = (float)scalingFactor * ((Int16)(_buffer[4] | (_buffer[5] << 8)));
-            quatY = (float)scalingFactor * ((Int16)(_buffer[6] | (_buffer[7] << 8)));
-            quatZ = (float)scalingFactor * ((Int16)(_buffer[8] | (_buffer[9] << 8)));
+            quatW = (float)scalingFactor * ((Int16)(_buffer[3] | (_buffer[4] << 8)));
+            quatX = (float)scalingFactor * ((Int16)(_buffer[5] | (_buffer[6] << 8)));
+            quatY = (float)scalingFactor * ((Int16)(_buffer[7] | (_buffer[8] << 8)));
+            quatZ = (float)scalingFactor * ((Int16)(_buffer[9] | (_buffer[10] << 8)));
 
             //System.Numerics.Quaternion tempBodyPose = new System.Numerics.Quaternion(quatW, quatX, quatY, quatZ);
             //System.Numerics.Quaternion conjTempBodyPose = System.Numerics.Quaternion.Conjugate(tempBodyPose);

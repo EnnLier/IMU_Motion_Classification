@@ -83,7 +83,7 @@ namespace BLE_Drive_UI.src
 
                     // Encode the data string into a byte array.    
                     //byte[] msg = Encoding.ASCII.GetBytes("This is a test<EOF>");
-                    byte[] msg = Encoding.ASCII.GetBytes("This is a test<EOF>");
+                    //byte[] msg = Encoding.ASCII.GetBytes("This is a test<EOF>");
                     // Send the data through the socket.    
                     //int bytesSent = _sender.Send(msg);
                     // Receive the response from the remote device.    
@@ -122,13 +122,14 @@ namespace BLE_Drive_UI.src
             // Release the socket.    
             if (_sender != null)
             { 
+                sendData(ToOutgoingPacket(new byte[]{ 0x04}, 1));
                 _sender.Shutdown(SocketShutdown.Both);
                 _sender.Close();
                 _sender.Dispose();
+                _sender = null;
                 OnStatusChanged("TCP Client Connection Closed");
             }
         }
-
 
         private void sendData(String data)
         {
@@ -141,9 +142,9 @@ namespace BLE_Drive_UI.src
                     int bytesSent = _sender.Send(msg);
                 }
             }
-            catch(System.Net.Sockets.SocketException e)
+            catch (System.Net.Sockets.SocketException e)
             {
-                CloseClient();
+                //CloseClient();
             }
         }
 
@@ -156,10 +157,28 @@ namespace BLE_Drive_UI.src
                     int bytesSent = _sender.Send(data);
                 }
             }
-            catch(System.Net.Sockets.SocketException e)
+            catch (System.Net.Sockets.SocketException e)
             {
-                CloseClient();
+                //CloseClient();
             }
+        }
+
+        private String ToOutgoingPacket(String stringBuffer)
+        {
+            stringBuffer.Insert(0, Encoding.Default.GetString(new Byte[] { 0x55 }));
+            //stringBuffer.Insert(11, Encoding.Default.GetString('\r'));
+            stringBuffer += '\r';
+            stringBuffer += '\n';
+            return stringBuffer;
+        }
+
+        private Byte[] ToOutgoingPacket(Byte[] stringBuffer, UInt16 len)
+        {
+            var res = new Byte[len + 1];
+            res[0] = 0x55;
+            stringBuffer.CopyTo(res, 1);
+
+            return res;
         }
 
         public async void ConnectDevice(BLEdevice deviceInformation)
@@ -324,22 +343,17 @@ namespace BLE_Drive_UI.src
             return Encoding.Default.GetString(new Byte[] { 0x55 });
         }
 
-        private String ToOutgoingPacket(String stringBuffer)
+        public bool flushBuffer()
         {
-            stringBuffer.Insert(0, Encoding.Default.GetString(new Byte[] { 0x55 }));
-            //stringBuffer.Insert(11, Encoding.Default.GetString('\r'));
-            stringBuffer += '\r';
-            stringBuffer += '\n';
-            return stringBuffer;
-        }
-
-        private Byte[] ToOutgoingPacket(Byte[] stringBuffer, UInt16 len)
-        {
-            var res = new Byte[len+1];
-            res[0] = 0x55;
-            stringBuffer.CopyTo(res, 1);
-    
-            return res;
+            try
+            {
+                _doubleBuffer.flush();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private void NameChangedEvent(BluetoothLEDevice sender, object args)
@@ -403,9 +417,18 @@ namespace BLE_Drive_UI.src
         private static String _path;
         private static int _numOfEntries;
 
+        private static object mThreadLock = new object();
+
         public doubleBuffer()
         {
-           _path = @"C:\Users\Enno-LT\Desktop\IMU_Motion_Classification\BLE Driver\UI App\BLE_Drive_UI\Data\";
+            var dir = Directory.GetParent(Directory.GetParent(Directory.GetCurrentDirectory()).FullName).FullName;
+            Console.WriteLine(dir);
+
+            _path = dir + @"\Data\";
+
+            if (!Directory.Exists(_path))
+                Directory.CreateDirectory(_path);
+                
             _numOfEntries = 200;
             _oneActive = true;
             _twoActive = false;
@@ -415,7 +438,7 @@ namespace BLE_Drive_UI.src
         {
             var scalingFactor = (1.00 / (1 << 14));
             var id = data[0]-48;
-            var calib = data[1];
+            var calib = data[1] - 48;
             //Console.WriteLine(calib);
             float quatW, quatX, quatY, quatZ;
             quatW = (float)scalingFactor * ((Int16)(data[2] | (data[3] << 8)));
@@ -468,8 +491,12 @@ namespace BLE_Drive_UI.src
 
         static async Task save()
         {
-            Console.WriteLine("Save from " + Thread.CurrentThread.ManagedThreadId);
+            //Console.WriteLine("Save from " + Thread.CurrentThread.ManagedThreadId);
             String name = DateTime.Now.ToString("yyyy_MM_dd_HH_mm_ss");
+            //lock(mThreadLock)
+            //{
+
+            //}
             if (_oneActive)
             {
                 await Task.Run(() => {
@@ -487,6 +514,23 @@ namespace BLE_Drive_UI.src
                     File.WriteAllLines(_path + name + ".txt", buf);
                 });
             }
+        }
+
+        //public void flush()
+        //{
+        //    try
+        //    {
+        //        save();
+        //        return true;
+        //    }
+        //    catch
+        //    {
+        //        return false;
+        //    }
+        //}
+        public async void flush()
+        {
+            await save();
         }
     }
 }

@@ -24,7 +24,8 @@ namespace BLE_Drive_UI
             _BLEdriver.StatusChanged += BLEdriver_StatusChanged;
             InitializeComponent();
             
-            pb_connect_TCP.Enabled = false;
+            cb_SaveToFile.Enabled = false;
+            cb_StreamTCP.Enabled = false;
         }
 
         private void Mainwindow_Load(object sender, EventArgs e)
@@ -72,7 +73,9 @@ namespace BLE_Drive_UI
             try
             {
                 this.l_Driver_Status.Text = e.Timestamp.TimeOfDay.Hours + ":" + e.Timestamp.TimeOfDay.Minutes + ":" + e.Timestamp.TimeOfDay.Seconds + "      " + e.Status;
-                this.pb_connect_TCP.Enabled = _BLEdriver.Connected == true ? true : false;
+                //this.pb_connect_TCP.Enabled = _BLEdriver.Connected == true ? true : false;
+                this.cb_StreamTCP.Enabled = _BLEdriver.Connected == true ? true : false;
+                this.cb_SaveToFile.Enabled = _BLEdriver.Connected == true ? true : false;
             }
             catch(System.InvalidOperationException)
             {
@@ -80,28 +83,17 @@ namespace BLE_Drive_UI
                 {
                     l_Driver_Status.Text = e.Status;
                 });
-                pb_connect_TCP.Invoke((Action)delegate
+                cb_StreamTCP.Invoke((Action)delegate
                 {
-                    this.pb_connect_TCP.Enabled = _BLEdriver.Connected == true ? true : false;
+                    //this.pb_connect_TCP.Enabled = _BLEdriver.Connected == true ? true : false;
+                    this.cb_StreamTCP.Enabled = _BLEdriver.Connected == true ? true : false;
+                    this.cb_SaveToFile.Enabled = _BLEdriver.Connected == true ? true : false;
                 });
             }
             
         }
 
-        private void pb_connect_TCP_Click(object sender, EventArgs e)
-        {
-            _BLEdriver.StartClient();
-        }
 
-        private void checkBox1_CheckedChanged(object sender, EventArgs e)
-        {
-            if(this.checkBox1.Checked)
-                _BLEdriver.isSaving = true;
-            else
-            {
-                _BLEdriver.isSaving = false;
-            }
-        }
 
         private void cb_StreamTCP_CheckedChanged(object sender, EventArgs e)
         {
@@ -114,6 +106,19 @@ namespace BLE_Drive_UI
             {
                 _BLEdriver.CloseClient();
                 _BLEdriver.isStreaming = false;
+            }
+        }
+
+        private void cb_SaveToFile_CheckedChanged(object sender, EventArgs e)
+        {
+            if (this.cb_SaveToFile.Checked)
+            {
+                _BLEdriver.isSaving = true;
+            }
+            else
+            {
+                _BLEdriver.isSaving = false;
+                _BLEdriver.flushBuffer();
             }
         }
     }

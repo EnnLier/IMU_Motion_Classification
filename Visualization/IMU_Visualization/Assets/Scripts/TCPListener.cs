@@ -21,12 +21,14 @@ public class TCPListener : MonoBehaviour
     private static Socket _listener;
     private static Socket _handler;
 
-    Thread dataReceiveThread;
+    Thread DataReceiveThread;
+    Thread WaitingThread;
 
-    private static uint _datasize = 12;
+    public static uint _datasize = 19;
 
     public byte[] IncomingDataBuffer = null;
     public bool Connected = false;
+    public bool justClosed = false;
 
     public object mThreadLock = new object();
 
@@ -39,7 +41,7 @@ public class TCPListener : MonoBehaviour
         _localEndPoint = new IPEndPoint(_ipAddress, 11000);
         
 
-        Thread WaitingThread = new Thread(StartServer);
+        WaitingThread = new Thread(StartServer);
         WaitingThread.Start();
     }
 
@@ -57,9 +59,9 @@ public class TCPListener : MonoBehaviour
 
             print("Waiting for a connection...");
             _handler = _listener.Accept();
-            dataReceiveThread = new Thread(new ThreadStart(ReceiveData));
-            dataReceiveThread.IsBackground = true;
-            dataReceiveThread.Start();
+            DataReceiveThread = new Thread(new ThreadStart(ReceiveData));
+            DataReceiveThread.IsBackground = true;
+            DataReceiveThread.Start();
             Connected = true;
         }
         catch(Exception e)
@@ -71,31 +73,97 @@ public class TCPListener : MonoBehaviour
 
     private void ReceiveData()
     {
-        while (true)
+        while (Connected)
         {
             try
             {
+                if (_handler.Available == 0) continue;
                 byte[] bytes = new byte[_datasize];
                 int bytesRec = _handler.Receive(bytes);
 
                 if (bytes[0] == 0x55)
                 {
+                    //print("rec");
                     lock (mThreadLock)
                     {
                         IncomingDataBuffer = bytes;
                     }
                 }
+                if (bytes[1] == 0x04)
+                {
+                    Connected = false;
+                }
+            }
+            catch (ObjectDisposedException e)
+            {
+                print("ObjectDisposedException: " + e);
+                Connected = false;
+                //closeClient();
+            }
+            catch (SocketException e)
+            {
+                print("SocketException: " + e);
+                Connected = false;
+                //closeClient();
             }
             catch (Exception e)
             {
                 print("ERROR in Update: " + e);
+                //Connected = false;
+                //closeClient();
             }
+            //finally
+            //{
+            //    if (!_listener.)
+            //    {
+            //        print("Connection aborted");
+            //        Connected = false;
+            //    }
+            //}
+        }
+    }
+
+    private void closeClient()
+    {
+        if (_listener != null)
+        {
+            //_listener.Shutdown(SocketShutdown.Both);
+            _listener.Close();
+            _listener.Dispose();
+            print("Client closed");
+
+            _listener = null;
+            DataReceiveThread = null;
+            Start();
         }
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (DataReceiveThread != null)
+        {
+            if (!DataReceiveThread.IsAlive)
+            {
+                print("Waiting for WaitingThread to close!");
+                while (WaitingThread.IsAlive)
+                {
+                    
+                }
+                WaitingThread.Abort();
+                closeClient();
+                
+            }
+        }
+    }
 
+    bool SocketConnected(Socket s)
+    {
+        bool part1 = s.Poll(1000, SelectMode.SelectRead);
+        bool part2 = (s.Available == 0);
+        if (part1 && part2)
+            return false;
+        else
+            return true;
     }
 }
