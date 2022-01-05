@@ -11,6 +11,7 @@ using Windows.Storage.Streams;
 using System.Net;
 using System.IO;
 using System.Net.Sockets;
+using System.Globalization;
 
 namespace BLE_Drive_UI.src
 {
@@ -53,6 +54,12 @@ namespace BLE_Drive_UI.src
             isSaving = false;
             isStreaming = false;
             _doubleBuffer = new doubleBuffer();
+        }
+
+        ~BLEdriver()
+        {
+            if(isSaving)
+                flushBuffer();
         }
 
         public void StartClient()
@@ -453,11 +460,8 @@ namespace BLE_Drive_UI.src
             y_a = (float)scalingFactor * ((Int16)(data[off + 2] | (data[off + 3] << 8)));
             z_a = (float)scalingFactor * ((Int16)(data[off + 4] | (data[off + 5] << 8)));
 
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
 
-
-
-
-            //var str = System.Text.Encoding.Default.GetString(data);
             var str = id.ToString() + " " + calib.ToString() + " " + quatW.ToString("0.0000") + " " + quatX.ToString("0.0000") + " " + quatY.ToString("0.0000") + " " + quatZ.ToString("0.0000") + " "
                 + x_a.ToString("0.0000") + " " + y_a.ToString("0.0000") + " " + z_a.ToString("0.0000");
           
@@ -495,7 +499,7 @@ namespace BLE_Drive_UI.src
             String name = DateTime.Now.ToString("yyyy_MM_dd_HH_mm_ss");
             //lock(mThreadLock)
             //{
-
+            
             //}
             if (_oneActive)
             {
@@ -516,18 +520,7 @@ namespace BLE_Drive_UI.src
             }
         }
 
-        //public void flush()
-        //{
-        //    try
-        //    {
-        //        save();
-        //        return true;
-        //    }
-        //    catch
-        //    {
-        //        return false;
-        //    }
-        //}
+
         public async void flush()
         {
             await save();
