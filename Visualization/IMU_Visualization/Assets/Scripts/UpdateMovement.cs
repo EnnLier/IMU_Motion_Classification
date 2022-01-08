@@ -47,8 +47,8 @@ public class UpdateMovement : MonoBehaviour
         try
         {
 
-            var id = (uint)_buffer[1] - 48;
-            _calib = (uint)_buffer[2]-48;
+            var id = (uint)_buffer[1];
+            _calib = (uint)_buffer[2];
 
 
             var scalingFactor = (1.00 / (1 << 14));
