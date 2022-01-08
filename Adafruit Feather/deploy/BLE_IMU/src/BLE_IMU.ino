@@ -12,8 +12,8 @@ BLEBas blebas;
 bool connected = false;
 bool initialized = false;
 
-uint8_t connection_interval_min = 12; //12 * 1.25ms = 15ms
-uint8_t connection_interval_max = 20; //20 * 1.25ms = 25ms
+uint8_t connection_interval_min = 6; //6 * 1.25ms = 7.5ms
+uint8_t connection_interval_max = 8; // * 1.25ms = 10ms
 
 uint8_t connection_handle;
 
@@ -93,7 +93,7 @@ void setup()
   dataTimer.begin(10,SendData,0,true);
 
   // BNOWatchdog.start();
-  
+  bno->setMode(Adafruit_BNO055::OPERATION_MODE_IMUPLUS);//adafruit_bno055_opmode_t mode);
 
   neopixel.begin();
 
@@ -189,6 +189,7 @@ void loop()
               while(1);
             }
             bno->setExtCrystalUse(true);
+            bno->setMode(Adafruit_BNO055::OPERATION_MODE_IMUPLUS);
             break;
           }
           else
@@ -214,7 +215,7 @@ void loop()
           
       // }
           
-    tmp[0] = '0';
+    tmp[0] = 0x00;
     tmp[1] = sys;
     for(int i =0;i<8;i++)
       tmp[i+2] = bufferQuat[i];
@@ -246,7 +247,7 @@ int num = 0;
 void SendData(TimerHandle_t handle)
 { 
   num++;
-  if (num >= 500)
+  if (num >= 5000)
   {
     // int r1 = rand() % 100;
     // int r2 = rand() % 100;
