@@ -444,8 +444,9 @@ namespace BLE_Drive_UI.src
         public async void addData(byte[] data)
         {
             var scalingFactor = (1.00 / (1 << 14));
-            var id = data[0]-48;
-            var calib = data[1] - 48;
+            var id = data[0];
+            var calib = data[1];
+
             //Console.WriteLine(calib);
             float quatW, quatX, quatY, quatZ;
             quatW = (float)scalingFactor * ((Int16)(data[2] | (data[3] << 8)));
