@@ -2,7 +2,7 @@ clc
 clear 
 
 Filename = sprintf('Messdaten_%s.mat', datestr(now,'mm-dd-yyyy HH-MM'));
-
+Filename = "Calib.mat";
 % len = length(dir('Data/*.txt'));
 % folder = "results/";
 % name = "measurement_data_";
@@ -22,7 +22,7 @@ end
 % 
 
 % formatspec = '%s %f:%f:%f %f %f %f %f %f %f %f %f %f';
-formatspec = '%s %s %f %f %f %f %f %f %f %f %f';
+formatspec = '%s %s %f %f %f %f %f %f %f %f %f %f %f %f';
 dat = [];
 dT = [];
 for i = 1 : length(names)
@@ -32,11 +32,12 @@ for i = 1 : length(names)
     tmp(:,[1,2]) = [];
 %     tmp{1,1} = [];
     tmp2 = [];
-    for k = 3 : length(tmp)
+    for k = 5 : length(tmp)
         tmp2 = [tmp2 tmp{1,k}(:,1)];
     end
     dat = [dat; tmp2];
 end
+fclose('all')
 
 data.t = datetimeToTimestamp(dT);
 data.dt = dT;
@@ -47,6 +48,11 @@ data.Qz = dat(:,4);
 data.Accx = dat(:,5);
 data.Accy = dat(:,6);
 data.Accz = dat(:,7);
+data.Acc = [data.Accx, data.Accy, data.Accz];
+data.Velx = cumtrapz(data.t(:,1),data.Accx(:,1));
+data.Vely = cumtrapz(data.t(:,1),data.Accy(:,1));
+data.Velz = cumtrapz(data.t(:,1),data.Accz(:,1)-0.981);
+data.Vel = [data.Velx, data.Vely, data.Velz];
 
 save(Filename,'data');
 
