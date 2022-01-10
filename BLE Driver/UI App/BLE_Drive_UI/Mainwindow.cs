@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using BLE_Drive_UI.src;
 using BLE_Drive_UI.Domain;
+using System.Diagnostics;
 using Windows.Devices.Enumeration;
 
 namespace BLE_Drive_UI
@@ -17,20 +18,26 @@ namespace BLE_Drive_UI
     {
         private BLEwatcher _BLEwatcher;
         private BLEdriver _BLEdriver;
+        private Dictionary<System.Windows.Forms.Label, String> FormCollection;
+
         public mw_form()
         {
             _BLEwatcher = new BLEwatcher();
             _BLEdriver = new BLEdriver();
             _BLEdriver.StatusChanged += BLEdriver_StatusChanged;
+            _BLEdriver.ChangeLabel += Form_ChangeLabel;
             InitializeComponent();
             
             cb_SaveToFile.Enabled = false;
             cb_StreamTCP.Enabled = false;
+
+            this.FormCollection = new Dictionary<System.Windows.Forms.Label, string>();
+
         }
 
         private void Mainwindow_Load(object sender, EventArgs e)
         {
-
+            
         }
 
         private void pb_Refresh_List_Click(object sender, EventArgs e)
@@ -68,11 +75,30 @@ namespace BLE_Drive_UI
             }
         }
 
+        private void Form_ChangeLabel(object sender, changeLabelEventArgs e)
+        {
+            //Debug.WriteLine("Name: " + e.label + "    Value: " + e.value);
+            foreach (Control x in this.Controls)
+            {
+                //var l = x.GetType();
+                //Debug.WriteLine("Name: " + x.Name + "    Value: " + e.value);
+                //Debug.WriteLine("Name: " + x.Name + "    label: " + e.label);
+                if (x.Name == e.label)
+                {
+                    x.Invoke((Action)delegate
+                    {
+                        x.Text = e.value;
+                    });
+                }
+            }
+        }
+
         private void BLEdriver_StatusChanged(object sender, statusChangedEventArgs e)
         {
             try
             {
-                this.l_Driver_Status.Text = e.Timestamp.TimeOfDay.Hours + ":" + e.Timestamp.TimeOfDay.Minutes + ":" + e.Timestamp.TimeOfDay.Seconds + "      " + e.Status;
+                var timestamp = e.Timestamp.ToString("HH:mm:ss");
+                this.l_Driver_Status.Text = timestamp + "      " + e.Status;
                 //this.pb_connect_TCP.Enabled = _BLEdriver.Connected == true ? true : false;
                 this.cb_StreamTCP.Enabled = _BLEdriver.Connected == true ? true : false;
                 this.cb_SaveToFile.Enabled = _BLEdriver.Connected == true ? true : false;
@@ -121,5 +147,6 @@ namespace BLE_Drive_UI
                 _BLEdriver.flushBuffer();
             }
         }
-    }
+
+}
 }

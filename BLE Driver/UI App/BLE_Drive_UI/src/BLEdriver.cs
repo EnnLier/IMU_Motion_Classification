@@ -12,6 +12,8 @@ using System.Net;
 using System.IO;
 using System.Net.Sockets;
 using System.Globalization;
+using System.Timers;
+using System.Diagnostics;
 
 namespace BLE_Drive_UI.src
 {
@@ -28,14 +30,11 @@ namespace BLE_Drive_UI.src
         public UInt16 BatteryLevel;
 
         private static UInt16 _packetsize = 16;
-        //private Byte[] _Buffer1 = new byte[20*_packetsize];
-        //private Byte[] _Buffer2 = new byte[20 * _packetsize];
-        private String _stringBuffer1 = String.Empty;
-        private String _stringBuffer2 = String.Empty;
 
-
+        private System.Timers.Timer UpdateMainwindowTimer = new System.Timers.Timer();
 
         public event EventHandler<statusChangedEventArgs> StatusChanged;
+        public event EventHandler<changeLabelEventArgs> ChangeLabel;
         public event EventHandler SelectedDeviceFound;
 
 
@@ -47,6 +46,9 @@ namespace BLE_Drive_UI.src
         //private doubleBuffer _doubleBuffer;
         public doubleBuffer _doubleBuffer;
 
+        private string[] calibration;
+        private static string[] elements = new string[] {"sys", "gyr", "acc", "mag" };
+
         public BLEdriver()
         {
             //ClearStringBuffer();
@@ -54,6 +56,13 @@ namespace BLE_Drive_UI.src
             isSaving = false;
             isStreaming = false;
             _doubleBuffer = new doubleBuffer();
+
+            calibration = new string[] {"0","0","0","0"};
+
+            UpdateMainwindowTimer.Elapsed += new ElapsedEventHandler(UpdateMainwindow);
+            UpdateMainwindowTimer.Interval = 50;
+            UpdateMainwindowTimer.Enabled = true;
+            UpdateMainwindowTimer.Start();
         }
 
         ~BLEdriver()
@@ -287,34 +296,49 @@ namespace BLE_Drive_UI.src
             }
             if(sender.Service.AttributeHandle == _deviceInformation.BLEuartCharacteristic.Service.AttributeHandle)
             {
-                var buff = new Byte[_packetsize];                
-                reader.ReadBytes(buff);
+                var data = new Byte[_packetsize];                
+                reader.ReadBytes(data);
+
+
+                var scalingFactor = (1.00 / (1 << 14));
+                var id = data[0];
+                var calib = data[1];
+
+                calibration[0] = ((calib >> 6) & 0x03).ToString();      //sys
+                calibration[1] = ((calib >> 4) & 0x03).ToString();      //gyr
+                calibration[2] = ((calib >> 2) & 0x03).ToString();      //acc
+                calibration[3] = ((calib) & 0x03).ToString();           //mag
+
+
+                //Console.WriteLine(calib);
+                float quatW, quatX, quatY, quatZ;
+                quatW = (float)scalingFactor * ((Int16)(data[2] | (data[3] << 8)));
+                quatX = (float)scalingFactor * ((Int16)(data[4] | (data[5] << 8)));
+                quatY = (float)scalingFactor * ((Int16)(data[6] | (data[7] << 8)));
+                quatZ = (float)scalingFactor * ((Int16)(data[8] | (data[9] << 8)));
+
+                var off = 10;
+                scalingFactor = (1.00 / 100.0);// 1m/s^2 = 100 LSB 
+                float x_a, y_a, z_a;
+                x_a = (float)scalingFactor * ((Int16)(data[off + 0] | (data[off + 1] << 8)));
+                y_a = (float)scalingFactor * ((Int16)(data[off + 2] | (data[off + 3] << 8)));
+                z_a = (float)scalingFactor * ((Int16)(data[off + 4] | (data[off + 5] << 8)));
+
+                Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+
+                var str = id.ToString() + " " + calibration[0] + " " + calibration[1] + " " + calibration[2] + " " + calibration[3] + " " + quatW.ToString("0.0000") + " " + quatX.ToString("0.0000") + " " + quatY.ToString("0.0000") + " " + quatZ.ToString("0.0000") + " "
+                    + x_a.ToString("0.0000") + " " + y_a.ToString("0.0000") + " " + z_a.ToString("0.0000");
+
 
                 if (_sender != null)
                 {
-                    sendData(ToOutgoingPacket(buff, _packetsize));
+                    sendData(ToOutgoingPacket(data, _packetsize));
                 }
                 if (isSaving)
                 {
-                    _doubleBuffer.addData(buff);
+                    _doubleBuffer.addData(str);
                 }
                
-
-
-                //sendData(ToOutgoingPacket(Encoding.Default.GetString(buff)));
-
-                //_stringBuffer += Encoding.Default.GetString(buff);
-
-                //if (_stringBuffer.Length >= 181)
-                //{
-                //    _stringBuffer += "<EOF>";
-                //    //    Console.WriteLine(_stringBuffer.Length);
-                //    //    Console.WriteLine(_stringBuffer);
-                //    sendData();
-                //    ClearStringBuffer();
-                //}
-                //Console.WriteLine("Buffer: " + Encoding.Default.GetString(buff));
-                //Console.WriteLine(_incomingBuffer.Length);
 
             }
 
@@ -385,7 +409,20 @@ namespace BLE_Drive_UI.src
             statusChangedEventArgs e = new statusChangedEventArgs();
             e.Status = status;
             e.Timestamp = DateTime.Now;
+            
             EventHandler<statusChangedEventArgs> handler = StatusChanged;
+            if (handler != null)
+            {
+                handler(this, e);
+            }
+        }
+
+        protected virtual void OnChangeLabel(String label, String value)
+        {
+            changeLabelEventArgs e = new changeLabelEventArgs();
+            e.label = label;
+            e.value = value;
+            EventHandler<changeLabelEventArgs> handler = ChangeLabel;
             if (handler != null)
             {
                 handler(this, e);
@@ -402,12 +439,25 @@ namespace BLE_Drive_UI.src
         }
 
 
+        private void UpdateMainwindow(object source, ElapsedEventArgs e)
+        {
+            //Debug.WriteLine("Update");
+            for (int i = 0; i < 4 ; i++)
+                OnChangeLabel("l_"+elements[i],calibration[i]);
+        }
+
 
     }
     public class statusChangedEventArgs : EventArgs
     {
         public String Status { get; set; }
         public DateTime Timestamp { get; set; }
+    }
+
+    public class changeLabelEventArgs : EventArgs
+    {
+        public String label { get; set; }
+        public String value { get; set; }
     }
 
     public class doubleBuffer
@@ -441,33 +491,10 @@ namespace BLE_Drive_UI.src
             _twoActive = false;
     }
 
-        public async void addData(byte[] data)
+        public async void addData(String data)
         {
-            var scalingFactor = (1.00 / (1 << 14));
-            var id = data[0];
-            var calib = data[1];
-
-            //Console.WriteLine(calib);
-            float quatW, quatX, quatY, quatZ;
-            quatW = (float)scalingFactor * ((Int16)(data[2] | (data[3] << 8)));
-            quatX = (float)scalingFactor * ((Int16)(data[4] | (data[5] << 8)));
-            quatY = (float)scalingFactor * ((Int16)(data[6] | (data[7] << 8)));
-            quatZ = (float)scalingFactor * ((Int16)(data[8] | (data[9] << 8)));
-
-            var off = 10;
-            scalingFactor = (1.00 / 100.0);// 1m/s^2 = 100 LSB 
-            float x_a, y_a, z_a;
-            x_a = (float)scalingFactor * ((Int16)(data[off + 0] | (data[off + 1] << 8)));
-            y_a = (float)scalingFactor * ((Int16)(data[off + 2] | (data[off + 3] << 8)));
-            z_a = (float)scalingFactor * ((Int16)(data[off + 4] | (data[off + 5] << 8)));
-
-            Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
-
-            var str = id.ToString() + " " + calib.ToString() + " " + quatW.ToString("0.0000") + " " + quatX.ToString("0.0000") + " " + quatY.ToString("0.0000") + " " + quatZ.ToString("0.0000") + " "
-                + x_a.ToString("0.0000") + " " + y_a.ToString("0.0000") + " " + z_a.ToString("0.0000");
-          
             var t = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss.fffffff");
-            String toSave = t + " " + str; // + "\n";
+            String toSave = t + " " + data; // + "\n";
 
             //Console.WriteLine("Add from " + Thread.CurrentThread.ManagedThreadId);
 

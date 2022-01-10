@@ -38,6 +38,14 @@ namespace BLE_Drive_UI
             this.l_Driver_Status = new System.Windows.Forms.Label();
             this.cb_SaveToFile = new System.Windows.Forms.CheckBox();
             this.cb_StreamTCP = new System.Windows.Forms.CheckBox();
+            this.labelAcc = new System.Windows.Forms.Label();
+            this.labelSys = new System.Windows.Forms.Label();
+            this.labelGyr = new System.Windows.Forms.Label();
+            this.labelMag = new System.Windows.Forms.Label();
+            this.l_mag = new System.Windows.Forms.Label();
+            this.l_gyr = new System.Windows.Forms.Label();
+            this.l_sys = new System.Windows.Forms.Label();
+            this.l_acc = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // pb_Refresh_List
@@ -123,9 +131,89 @@ namespace BLE_Drive_UI
             this.cb_StreamTCP.UseVisualStyleBackColor = true;
             this.cb_StreamTCP.CheckedChanged += new System.EventHandler(this.cb_StreamTCP_CheckedChanged);
             // 
+            // labelAcc
+            // 
+            this.labelAcc.AutoSize = true;
+            this.labelAcc.Location = new System.Drawing.Point(892, 124);
+            this.labelAcc.Name = "labelAcc";
+            this.labelAcc.Size = new System.Drawing.Size(29, 13);
+            this.labelAcc.TabIndex = 7;
+            this.labelAcc.Text = "Acc:";
+            // 
+            // labelSys
+            // 
+            this.labelSys.AutoSize = true;
+            this.labelSys.Location = new System.Drawing.Point(893, 58);
+            this.labelSys.Name = "labelSys";
+            this.labelSys.Size = new System.Drawing.Size(27, 13);
+            this.labelSys.TabIndex = 8;
+            this.labelSys.Text = "Sys:";
+            // 
+            // labelGyr
+            // 
+            this.labelGyr.AutoSize = true;
+            this.labelGyr.Location = new System.Drawing.Point(894, 91);
+            this.labelGyr.Name = "labelGyr";
+            this.labelGyr.Size = new System.Drawing.Size(26, 13);
+            this.labelGyr.TabIndex = 9;
+            this.labelGyr.Text = "Gyr:";
+            // 
+            // labelMag
+            // 
+            this.labelMag.AutoSize = true;
+            this.labelMag.Location = new System.Drawing.Point(891, 157);
+            this.labelMag.Name = "labelMag";
+            this.labelMag.Size = new System.Drawing.Size(31, 13);
+            this.labelMag.TabIndex = 10;
+            this.labelMag.Text = "Mag:";
+            // 
+            // l_mag
+            // 
+            this.l_mag.AutoSize = true;
+            this.l_mag.Location = new System.Drawing.Point(939, 157);
+            this.l_mag.Name = "l_mag";
+            this.l_mag.Size = new System.Drawing.Size(13, 13);
+            this.l_mag.TabIndex = 14;
+            this.l_mag.Text = "0";
+            // 
+            // l_gyr
+            // 
+            this.l_gyr.AutoSize = true;
+            this.l_gyr.Location = new System.Drawing.Point(939, 91);
+            this.l_gyr.Name = "l_gyr";
+            this.l_gyr.Size = new System.Drawing.Size(13, 13);
+            this.l_gyr.TabIndex = 13;
+            this.l_gyr.Text = "0";
+            // 
+            // l_sys
+            // 
+            this.l_sys.AutoSize = true;
+            this.l_sys.Location = new System.Drawing.Point(939, 58);
+            this.l_sys.Name = "l_sys";
+            this.l_sys.Size = new System.Drawing.Size(13, 13);
+            this.l_sys.TabIndex = 12;
+            this.l_sys.Text = "0";
+            // 
+            // l_acc
+            // 
+            this.l_acc.AutoSize = true;
+            this.l_acc.Location = new System.Drawing.Point(939, 124);
+            this.l_acc.Name = "l_acc";
+            this.l_acc.Size = new System.Drawing.Size(13, 13);
+            this.l_acc.TabIndex = 11;
+            this.l_acc.Text = "0";
+            // 
             // mw_form
             // 
-            this.ClientSize = new System.Drawing.Size(923, 551);
+            this.ClientSize = new System.Drawing.Size(1147, 551);
+            this.Controls.Add(this.l_mag);
+            this.Controls.Add(this.l_gyr);
+            this.Controls.Add(this.l_sys);
+            this.Controls.Add(this.l_acc);
+            this.Controls.Add(this.labelMag);
+            this.Controls.Add(this.labelGyr);
+            this.Controls.Add(this.labelSys);
+            this.Controls.Add(this.labelAcc);
             this.Controls.Add(this.cb_StreamTCP);
             this.Controls.Add(this.cb_SaveToFile);
             this.Controls.Add(this.l_Driver_Status);
@@ -150,6 +238,14 @@ namespace BLE_Drive_UI
         private System.Windows.Forms.Label l_Driver_Status;
         private System.Windows.Forms.CheckBox cb_SaveToFile;
         private System.Windows.Forms.CheckBox cb_StreamTCP;
+        private System.Windows.Forms.Label labelAcc;
+        private System.Windows.Forms.Label labelSys;
+        private System.Windows.Forms.Label labelGyr;
+        private System.Windows.Forms.Label labelMag;
+        private System.Windows.Forms.Label l_mag;
+        private System.Windows.Forms.Label l_gyr;
+        private System.Windows.Forms.Label l_sys;
+        private System.Windows.Forms.Label l_acc;
     }
 }
 
