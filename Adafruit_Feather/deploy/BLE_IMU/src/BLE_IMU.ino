@@ -10,7 +10,7 @@
 #define CLIENT_NAME "BLE_windows"  
 #define HOST_NAME "IMU"  
 
-#define FILENAME    "/CalibrationValues.bin"
+#define FILENAME    "CalibrationValues.bin"
 
 BLEUart bleuart;
 BLEBas blebas;
@@ -27,11 +27,8 @@ uint8_t connection_interval_max = 8; // * 1.25ms = 10ms
 uint8_t connection_handle;
 
 SoftwareTimer dataTimer;
-SoftwareTimer BNOWatchdog;
 
 Adafruit_BNO055 *bno;
-
-Adafruit_NeoPixel neopixel = Adafruit_NeoPixel(NEOPIXEL_NUM, PIN_NEOPIXEL, NEO_GRB + NEO_KHZ800);
 
 const String BNO_System_Status[7] = {
      "Idle",
@@ -64,32 +61,37 @@ void setup()
 {
   Serial.begin(115200);
 
-  // int t = millis();
-  // while(millis() - t < 2000);
-
-  delay(2000);
-
   InternalFS.begin();
 
   bno = new Adafruit_BNO055(55, 0x28);//low //Adafruit_BNO055(56, 0x29)//high//Adafruit_BNO055(55);
 
-  if(!bno->begin())
+  while(!bno->begin())
   {
-    Serial.println("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
-    while(1);
+    delay(500);
+    Serial.println("BNO not detected, retrying....");
   }
+
   bno->setExtCrystalUse(true);
 
-  Serial.println("loading calibration...");
-  // InternalFS.remove("/CalibrationValues.txt");
+  delay(1000);
   load_calibration();
-  
-
+  delay(1000);
   if(bno->isFullyCalibrated())
   {
     Serial.println("apparently calibrated...");
     isCalibrated = true;
   }
+  else
+  {
+    isCalibrated = false;
+  }
+
+  // InternalFS.format();
+  // if(bno->isFullyCalibrated())
+  // {
+  //   Serial.println("apparently calibrated...");
+  //   isCalibrated = true;
+  // }
   
   Bluefruit.autoConnLed(true);
   Bluefruit.configPrphBandwidth(BANDWIDTH_HIGH);
@@ -111,18 +113,12 @@ void setup()
 
   blebas.setUuid(bat_uuid);
   blebas.begin();
-  blebas.notify(100);
+  // blebas.notify(100);
 
-  // int* id = new int(2); 
-
-  BNOWatchdog.begin(3000,getStatus,0,true);
-  // delay(1);
   dataTimer.begin(10,SendData,0,true);
 
-  // BNOWatchdog.start();
   bno->setMode(Adafruit_BNO055::OPERATION_MODE_IMUPLUS);//adafruit_bno055_opmode_t mode);
 
-  neopixel.begin();
 
   Serial.println("Advertising");
   advertise();
@@ -145,6 +141,22 @@ void advertise()
 
 void onConnect(uint16_t conn_handle)
 {
+
+  // adafruit_bno055_offsets_t offs;
+  // bno->getSensorOffsets(offs);
+  // Serial.println("Current Offsets: ");
+  // print_calib(offs);
+
+  // delay(50);
+  // bno->getSensorOffsets(offs);
+  // // delay(50);
+  // Serial.println("New Offsets: ");
+  // // delay(50);
+  // print_calib(offs);
+  // delay(50);
+
+
+
   connection_handle  = conn_handle;
   // Get the reference to current connection
   BLEConnection* connection = Bluefruit.Connection(conn_handle);
@@ -157,6 +169,7 @@ void onConnect(uint16_t conn_handle)
 
   connected = true;
 
+  // load_calibration();
   // printTreeDir("/", 0);
 }
 
@@ -175,8 +188,8 @@ void onDisconnect(uint16_t conn_handle, uint8_t reason)
   Serial.print("Disconnected, reason = 0x"); Serial.println(reason, HEX);
 }
 
-char sendBuffer[16] = {'A','0','0','0','1','0','1','2','0','0','1','0','1','2'};
-char tmp[16];
+char sendBuffer[22] = {'A','0','0','0','1','0','1','2','0','0','1','0','1','2','0','0','1','0','1','2'};
+char tmp[22];
 uint8_t sys, gyro, accel, mag = 0;
 uint8_t system_status, self_test_result, system_error = 0;
 char calib = 0x00;
@@ -188,11 +201,12 @@ int errCount = 0;
 
 void loop() 
 {
+  if (!connected) return;
     sys, gyro, accel, mag = 0;
     calib = 0x00;
     memset(bufferQuat, 0, 8);
     memset(bufferVect, 0, 6);
-    memset(tmp, 0, 16);
+    memset(tmp, 0, 22);
 
     bno->getCalibration(&sys, &gyro, &accel, &mag);
 
@@ -205,9 +219,12 @@ void loop()
     bno->readLen(Adafruit_BNO055::BNO055_QUATERNION_DATA_W_LSB_ADDR, bufferQuat, 8);          
     for(int i =0;i<8;i++)
       tmp[i+2] = bufferQuat[i];
-    bno->readLen(Adafruit_BNO055::BNO055_ACCEL_DATA_X_LSB_ADDR, bufferVect, 6);
+    bno->readLen(Adafruit_BNO055::BNO055_LINEAR_ACCEL_DATA_X_LSB_ADDR, bufferVect, 6);
     for(int i =0;i<6;i++)
       tmp[i+10] = bufferVect[i]; //11-16
+    bno->readLen(Adafruit_BNO055::BNO055_GYRO_DATA_X_LSB_ADDR, bufferVect, 6);
+    for(int i =0;i<6;i++)
+      tmp[i+16] = bufferVect[i]; //17-22
 
     memcpy(&sendBuffer[0],&tmp[0],sizeof(sendBuffer));
 
@@ -233,15 +250,11 @@ void loop()
       bno = new Adafruit_BNO055(55, 0x28);
       if(!bno->begin())
       {
-        neopixel.setPixelColor(0,120,120,120);
-        neopixel.show();
         Serial.println("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
         while(!bno->begin())
         {
           delay(2);
         }
-        neopixel.setPixelColor(0,0,0,0);
-        neopixel.show();
       }
       bno->setExtCrystalUse(true);
       bno->setMode(Adafruit_BNO055::OPERATION_MODE_IMUPLUS);
@@ -261,7 +274,6 @@ void bleuart_rx_callback(uint16_t conn_hdl)
   if (str.substring(0,11).compareTo("Recalibrate") == 0)
   {
     Serial.println("Recalibrate!");
-    InternalFS.remove(FILENAME);
     isCalibrated = false;
     // Serial.println("Restart Device!");
   }
@@ -277,7 +289,7 @@ void SendData(TimerHandle_t handle)
     blebas.notify(100);
     num = 0;
   }
-  bleuart.write(sendBuffer,16);
+  bleuart.write(sendBuffer,22);
   digitalToggle(LED_RED);
 }
 
@@ -291,22 +303,28 @@ void bleuart_notify_callback(uint16_t conn_hdl, bool enabled)
 
 bool load_calibration()
 {
+  Serial.println("load_calibration");
+  printTreeDir("/", 0);
   file.open(FILENAME, Adafruit_LittleFS_Namespace::FILE_O_READ);
   char buffer[sizeof(adafruit_bno055_offsets_t)];
   if ( file.isOpen() )
   {
-    Serial.println("load_calibration: " FILENAME " file exists");
-    
-    uint32_t readlen;
-    // char buffer[64] = { 0 };
-    readlen = file.read(buffer, sizeof(buffer));
-    buffer[readlen];
+    Serial.println(FILENAME " exists");
+
     adafruit_bno055_offsets_t calibration;
     calibration = {};
+    
+    // uint32_t readlen;
+    // char buffer[64] = { 0 };
+    // readlen = file.read(buffer, sizeof(buffer));
+    file.read(buffer, sizeof(buffer));
+    // buffer[readlen];
+    
     memcpy(&calibration,buffer,sizeof(adafruit_bno055_offsets_t));
-    print_calib(&calibration);
+    print_calib(calibration);
     bno->setSensorOffsets(calibration);
     file.close();
+    
     return true;
   }
   else
@@ -318,49 +336,52 @@ bool load_calibration()
 
 bool save_calibration()
 {
+  InternalFS.remove(FILENAME);
   adafruit_bno055_offsets_t offsets;
   bno->getSensorOffsets(offsets);
   
-  Serial.print("save_calibration: " FILENAME " file to write ... ");
-
+  Serial.println("save_calibration: " FILENAME " file to write ... ");
   if( file.open(FILENAME, Adafruit_LittleFS_Namespace::FILE_O_WRITE) )
   {
     file.write((char*)&offsets, sizeof(adafruit_bno055_offsets_t));
+    delay(40);
     file.close();
-    print_calib(&offsets);
+    print_calib(offsets);
     Serial.println("Calibration saved");
+    printTreeDir("/", 0);
     return true;
   }
   else
   {
     Serial.println("Failed Saving!");
+    printTreeDir("/", 0);
     return false;
   }
 }
 
 
-void print_calib(adafruit_bno055_offsets_t *calibrations)
+void print_calib(adafruit_bno055_offsets_t calibrations)
 {
     Serial.print("accx ");
-    Serial.println(calibrations->accel_offset_x);
+    Serial.println(calibrations.accel_offset_x);
     Serial.print("accy ");
-    Serial.println(calibrations->accel_offset_y);
+    Serial.println(calibrations.accel_offset_y);
     Serial.print("accz ");
-    Serial.println(calibrations->accel_offset_z);
+    Serial.println(calibrations.accel_offset_z);
     Serial.print("acc radius ");
-    Serial.println(calibrations->accel_radius);
+    Serial.println(calibrations.accel_radius);
     Serial.print("gyrx ");
-    Serial.println(calibrations->gyro_offset_x);
+    Serial.println(calibrations.gyro_offset_x);
     Serial.print("gyry ");
-    Serial.println(calibrations->gyro_offset_y);
+    Serial.println(calibrations.gyro_offset_y);
     Serial.print("gyrz ");
-    Serial.println(calibrations->gyro_offset_z);
+    Serial.println(calibrations.gyro_offset_z);
     Serial.print("magx ");
-    Serial.println(calibrations->mag_offset_x);
+    Serial.println(calibrations.mag_offset_x);
     Serial.print("magy ");
-    Serial.println(calibrations->mag_offset_y);
+    Serial.println(calibrations.mag_offset_y);
     Serial.print("magz ");
-    Serial.println(calibrations->mag_offset_z);
+    Serial.println(calibrations.mag_offset_z);
 }
 
 void toBin(bool arr[],uint8_t n)
