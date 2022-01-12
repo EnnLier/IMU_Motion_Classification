@@ -5,7 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 using System.Windows.Forms;
 using BLE_Drive_UI.src;
 using BLE_Drive_UI.Domain;
@@ -26,19 +26,26 @@ namespace BLE_Drive_UI
 
         private object m_chartLock = new object();
 
+        //private Thread DataPlotThread;
+        private System.Windows.Forms.Timer PlotDataTimer = new System.Windows.Forms.Timer();
+
         public mw_form()
         {
             _BLEwatcher = new BLEwatcher();
             _BLEdriver = new BLEdriver();
             _BLEdriver.StatusChanged += BLEdriver_StatusChanged;
             _BLEdriver.ChangeLabel += Form_ChangeLabel;
-            _BLEdriver.UpdateChart += update_dataChart;
+            //_BLEdriver.UpdateChart += update_dataChart;
             InitializeComponent();
             
             cb_SaveToFile.Enabled = false;
             cb_StreamTCP.Enabled = false;
             cb_plotAcc.Enabled = false;
             b_recalibrate.Enabled = false;
+
+            PlotDataTimer.Tick += new EventHandler(update_dataChart);
+            PlotDataTimer.Interval = 20;
+            PlotDataTimer.Enabled = false;
 
             initialize_dataChart();
         }
@@ -111,7 +118,10 @@ namespace BLE_Drive_UI
         private void BLEdriver_StatusChanged(object sender, statusChangedEventArgs e)
         {
             var timestamp = e.Timestamp.ToString("HH:mm:ss");
-            
+            //if(!_BLEdriver.Connected)
+            //{
+            //    cb_plotAcc.Checked = false;
+            //}
             try
             {
                 this.l_Driver_Status.Text = timestamp + "      " + e.Status;
@@ -162,11 +172,18 @@ namespace BLE_Drive_UI
                 ch_dataPlot.Series[0].Points.Clear();
                 ch_dataPlot.Series[1].Points.Clear();
                 ch_dataPlot.Series[2].Points.Clear();
-                _BLEdriver.isPlotting = true;
+                ch_dataPlot.Series[3].Points.Clear();
+                ch_dataPlot.Series[4].Points.Clear();
+                ch_dataPlot.Series[5].Points.Clear();
+                PlotDataTimer.Enabled = true;
+                this.PlotDataTimer.Start();
+                //_BLEdriver.isPlotting = true;
             }
             else
             {
-                _BLEdriver.isPlotting = false;
+                //_BLEdriver.isPlotting = false;
+                PlotDataTimer.Enabled = false;
+                this.PlotDataTimer.Stop();
             }
         }
 
@@ -337,18 +354,20 @@ namespace BLE_Drive_UI
             ch_dataPlot.Series[5].BorderWidth = 2;
         }
 
-        private void update_dataChart(object sender, imuDataEventArgs e)
+        private void update_dataChart(object sender, System.EventArgs e)
         {
-            lock(m_chartLock)
+            var data = _BLEdriver.GetDataToPlot();
+            if(!_BLEdriver.Connected) return;
+            lock (m_chartLock)
             {
                 ch_dataPlot.Invoke((Action)delegate
                 {
-                    ch_dataPlot.Series[0].Points.AddXY(_currentChartValue, e.Accx);
-                    ch_dataPlot.Series[1].Points.AddXY(_currentChartValue, e.Accy);
-                    ch_dataPlot.Series[2].Points.AddXY(_currentChartValue, e.Accz);
-                    ch_dataPlot.Series[3].Points.AddXY(_currentChartValue, e.Gyrx);
-                    ch_dataPlot.Series[4].Points.AddXY(_currentChartValue, e.Gyry);
-                    ch_dataPlot.Series[5].Points.AddXY(_currentChartValue, e.Gyrz);
+                    ch_dataPlot.Series[0].Points.AddXY(_currentChartValue, data[0]);
+                    ch_dataPlot.Series[1].Points.AddXY(_currentChartValue, data[1]);
+                    ch_dataPlot.Series[2].Points.AddXY(_currentChartValue, data[2]);
+                    ch_dataPlot.Series[3].Points.AddXY(_currentChartValue, data[3]);
+                    ch_dataPlot.Series[4].Points.AddXY(_currentChartValue, data[4]);
+                    ch_dataPlot.Series[5].Points.AddXY(_currentChartValue, data[5]);
                     _currentChartValue++;
                     if (_currentChartValue >= _maxNumOfChartValues)
                     {
@@ -362,6 +381,7 @@ namespace BLE_Drive_UI
                     }
                 });
             }
+
         }
 
 

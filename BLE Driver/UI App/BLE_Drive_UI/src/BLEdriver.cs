@@ -30,6 +30,8 @@ namespace BLE_Drive_UI.src
         public UInt16 BatteryLevel;
 
         private static UInt16 _packetsize = 22;
+        private static UInt16 _datapoints = 6;              //to Plot
+        private static UInt16 _writeBuffersize = 200;
 
         private System.Timers.Timer UpdateMainwindowTimer = new System.Timers.Timer();
 
@@ -38,6 +40,7 @@ namespace BLE_Drive_UI.src
         public event EventHandler<imuDataEventArgs> UpdateChart;
         public event EventHandler SelectedDeviceFound;
 
+        private object m_DataLock = new object();
 
         private IPHostEntry _host;
         private IPAddress _ipAddress;
@@ -45,10 +48,12 @@ namespace BLE_Drive_UI.src
         private Socket _sender;
 
         //private doubleBuffer _doubleBuffer;
-        public doubleBuffer _doubleBuffer;
+        public doubleDataBuffer _doubleBuffer;
 
         private string[] calibration;
         private static string[] elements = new string[] {"sys", "gyr", "acc", "mag" };
+
+        public float[] dataToPlot;
 
         public BLEdriver()
         {
@@ -57,20 +62,30 @@ namespace BLE_Drive_UI.src
             Connected = false;
             isSaving = false;
             isStreaming = false;
-            _doubleBuffer = new doubleBuffer();
+            _doubleBuffer = new doubleDataBuffer(_writeBuffersize);
 
             calibration = new string[] {"0","0","0","0"};
+            dataToPlot = new float[_datapoints];
 
             UpdateMainwindowTimer.Elapsed += new ElapsedEventHandler(UpdateMainwindow);
             UpdateMainwindowTimer.Interval = 50;
             UpdateMainwindowTimer.Enabled = true;
             UpdateMainwindowTimer.Start();
+
         }
 
         ~BLEdriver()
         {
             if(isSaving)
                 flushBuffer();
+        }
+
+        public float[] GetDataToPlot()
+        {
+            lock(m_DataLock)
+            {
+                return dataToPlot;
+            }
         }
 
         public void StartClient()
@@ -347,8 +362,13 @@ namespace BLE_Drive_UI.src
                 gyrz = (float)scalingFactor * ((Int16)(data[off + 4] | (data[off + 5] << 8)));
 
 
+                lock(m_DataLock)
+                {
+                    dataToPlot = new float[] { x_a, y_a, z_a, gyrx, gyry, gyrz };
+                }
+
                 var str = id.ToString() + " " + calibration[0] + " " + calibration[1] + " " + calibration[2] + " " + calibration[3] + " " + quatW.ToString("0.0000") + " " + quatX.ToString("0.0000") + " " + quatY.ToString("0.0000") + " " + quatZ.ToString("0.0000") + " "
-                    + x_a.ToString("0.0000") + " " + y_a.ToString("0.0000") + " " + z_a.ToString("0.0000");
+                    + x_a.ToString("0.0000") + " " + y_a.ToString("0.0000") + " " + z_a.ToString("0.0000") + " " + gyrx.ToString("0.0000") + " " + gyry.ToString("0.0000") + " " + gyrz.ToString("0.0000");
 
 
                 if (_sender != null)
@@ -359,10 +379,10 @@ namespace BLE_Drive_UI.src
                 {
                     _doubleBuffer.addData(str);
                 }
-                if (isPlotting)
-                {
-                    OnaccelerationData(x_a, y_a, z_a, gyrx, gyry, gyrz);
-                }
+                //if (isPlotting)
+                //{
+                //    OnaccelerationData(x_a, y_a, z_a, gyrx, gyry, gyrz);
+                //}
 
             }
 
@@ -521,23 +541,33 @@ namespace BLE_Drive_UI.src
         public String value { get; set; }
     }
 
-    public class doubleBuffer
+    public class doubleDataBuffer
     {
-        //private String[][] _Buffer1 = new String[20];
-        //private String[] Buffer1 = new String;
-        //private String[] Buffer2 = String.Empty;
+        //private float[][] fBuffer1;
+        //private float[][] fBuffer2;
 
-        private static List<String> Buffer1 = new List<String>();
-        private static List<String> Buffer2 = new List<String>();
+        //private static List<String> sBuffer1 = new List<String>();
+        //private static List<String> sBuffer2 = new List<String>();
         private static bool _oneActive = true;
         private static bool _twoActive = false;
 
         private static String _path;
-        private static int _numOfEntries;
+        private static UInt16 _bufferLength;
+        //private static UInt16 _dataPoints;
+
+        //private UInt16 _fBufC1;
+        //private UInt16 _fBufC2;
+        private static UInt16 _sBufC1;
+        private static UInt16 _sBufC2;
+
+        private static String[] sBuffer1;
+        private static String[] sBuffer2;
 
         private static object mThreadLock = new object();
 
-        public doubleBuffer()
+        public bool saveToFile = false;
+
+        public doubleDataBuffer(UInt16 bufferLength)//, UInt16 dataPoints)
         {
             var dir = Directory.GetParent(Directory.GetParent(Directory.GetCurrentDirectory()).FullName).FullName;
             Console.WriteLine(dir);
@@ -546,67 +576,110 @@ namespace BLE_Drive_UI.src
 
             if (!Directory.Exists(_path))
                 Directory.CreateDirectory(_path);
-                
-            _numOfEntries = 200;
+
+            //_dataPoints = dataPoints;
+            _bufferLength = bufferLength;
             _oneActive = true;
             _twoActive = false;
-    }
+
+            //_fBufC1 = 0;
+            //_fBufC2 = 0;
+
+            _sBufC1 = 0;
+            _sBufC2 = 0;
+
+            //fBuffer1 = new float[_bufferLength][];
+            //fBuffer2 = new float[_bufferLength][];
+
+            sBuffer1 = new String[_bufferLength];
+            sBuffer2 = new String[_bufferLength];
+        }
+
+        //public async void addData(float[] data)
+        //{
+        //    if (_oneActive) // Buffer 1 active
+        //    {
+        //        //Console.WriteLine(Buffer1.Count);
+        //        fBuffer1[_fBufC1] = data;
+        //        _fBufC1++;
+        //        if (_fBufC1 >= _bufferLength)
+        //        {
+        //            await save();
+        //            _twoActive = true;
+        //            _oneActive = false;
+        //            _fBufC1 = 0;
+        //        }
+        //    }
+        //    else if (_twoActive)
+        //    {
+        //        fBuffer2[_fBufC2] = data;
+        //      _fBufC2++;
+        //        if (_fBufC2 >= _bufferLength)
+        //        {
+        //            await save();
+        //            _oneActive = true;
+        //            _twoActive = false;
+        //            _fBufC2 = 0;
+        //        }
+        //    }
+        //}
 
         public async void addData(String data)
         {
             var t = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss.fffffff");
             String toSave = t + " " + data; // + "\n";
 
-            //Console.WriteLine("Add from " + Thread.CurrentThread.ManagedThreadId);
-
             if (_oneActive) // Buffer 1 active
             {
                 //Console.WriteLine(Buffer1.Count);
-                Buffer1.Add(toSave);
-                if (Buffer1.Count >= _numOfEntries)
+                sBuffer1[_sBufC1] = toSave;
+                _sBufC1++;
+                if (_sBufC1 >= _bufferLength)
                 {
-                    await save();   
                     _twoActive = true;
                     _oneActive = false;
+                    _sBufC1 = 0;
+                    await save(sBuffer1);
                 }
             }
             else if (_twoActive)
             {
-                Buffer2.Add(toSave);
-                if (Buffer2.Count >= _numOfEntries)
+                sBuffer2[_sBufC2] = toSave;
+                _sBufC2++;
+                if (_sBufC2 >= _bufferLength)
                 {
-                    await save();
                     _oneActive = true;
                     _twoActive = false;
+                    _sBufC2 = 0;
+                    await save(sBuffer2);
                 }
             }
         }
 
-        static async Task save()
+        static async Task save(String[] buffer)
         {
             //Console.WriteLine("Save from " + Thread.CurrentThread.ManagedThreadId);
             String name = DateTime.Now.ToString("yyyy_MM_dd_HH_mm_ss");
-            //lock(mThreadLock)
-            //{
-            
-            //}
+                await Task.Run(() => {
+                    File.WriteAllLines(_path + name + ".txt", buffer);
+                });
+            buffer = new String[]{ };
+        }
+
+        static async Task save()
+        {
             if (_oneActive)
             {
-                await Task.Run(() => {
-                    var buf = Buffer1.ToArray();
-                    Buffer1.Clear();
-                    File.WriteAllLines(_path + name + ".txt", buf);
-                });
-                
+                await save(sBuffer1);
             }
             else if (_twoActive)
             {
-                await Task.Run(() => {
-                    var buf = Buffer2.ToArray();
-                    Buffer2.Clear();
-                    File.WriteAllLines(_path + name + ".txt", buf);
-                });
+                await save(sBuffer2);
             }
+            _oneActive = true;
+            _twoActive = false;
+            _sBufC2 = 0;
+            _sBufC1 = 0;
         }
 
 
@@ -615,4 +688,5 @@ namespace BLE_Drive_UI.src
             await save();
         }
     }
+
 }

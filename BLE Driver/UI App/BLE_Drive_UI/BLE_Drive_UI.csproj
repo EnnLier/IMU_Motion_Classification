@@ -55,7 +55,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Domain\Class1.cs" />
+    <Compile Include="Domain\BLE.cs" />
     <Compile Include="src\BLEdriver.cs" />
     <Compile Include="src\BLEwatcher.cs" />
     <Compile Include="Mainwindow.cs">
