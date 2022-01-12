@@ -21,7 +21,7 @@ namespace BLE_Drive_UI
         private BLEwatcher _BLEwatcher;
         private BLEdriver _BLEdriver;
 
-        private static int _maxNumOfChartValues = 500;
+        private static int _maxNumOfChartValues = 300;
         private int _currentChartValue = 0;
 
         private object m_chartLock = new object();
@@ -32,7 +32,7 @@ namespace BLE_Drive_UI
             _BLEdriver = new BLEdriver();
             _BLEdriver.StatusChanged += BLEdriver_StatusChanged;
             _BLEdriver.ChangeLabel += Form_ChangeLabel;
-            _BLEdriver.UpdateChart += update_accChart;
+            _BLEdriver.UpdateChart += update_dataChart;
             InitializeComponent();
             
             cb_SaveToFile.Enabled = false;
@@ -40,7 +40,7 @@ namespace BLE_Drive_UI
             cb_plotAcc.Enabled = false;
             b_recalibrate.Enabled = false;
 
-            initialize_accChart();
+            initialize_dataChart();
         }
 
         private void Mainwindow_Load(object sender, EventArgs e)
@@ -159,9 +159,9 @@ namespace BLE_Drive_UI
             if (this.cb_plotAcc.Checked)
             {
                 _currentChartValue = 0;
-                ch_AccPlot.Series[0].Points.Clear();
-                ch_AccPlot.Series[1].Points.Clear();
-                ch_AccPlot.Series[2].Points.Clear();
+                ch_dataPlot.Series[0].Points.Clear();
+                ch_dataPlot.Series[1].Points.Clear();
+                ch_dataPlot.Series[2].Points.Clear();
                 _BLEdriver.isPlotting = true;
             }
             else
@@ -194,57 +194,116 @@ namespace BLE_Drive_UI
 
         }
 
-        private void initialize_accChart()
+        private void initialize_dataChart()
         {
             
-            this.ch_AccPlot.Series.Clear();
+            this.ch_dataPlot.Series.Clear();
 
             //ch_AccPlot.ChartType = SeriesChartType.Spline;
 
             //this.ch_AccPlot.Series.Add("AccX");
             //this.ch_AccPlot.Series.Add("AccY");
             //this.ch_AccPlot.Series.Add("AccZ");
-            var chartAreaX = ch_AccPlot.ChartAreas.Add("X");
-            var chartAreaY = ch_AccPlot.ChartAreas.Add("Y");
-            var chartAreaZ = ch_AccPlot.ChartAreas.Add("Z");
+            var chartAreaAccX = ch_dataPlot.ChartAreas.Add("CaAccX");
+            var chartAreaAccY = ch_dataPlot.ChartAreas.Add("CaAccY");
+            var chartAreaAccZ = ch_dataPlot.ChartAreas.Add("CaAccZ");
+            var chartAreaGyrX = ch_dataPlot.ChartAreas.Add("CaGyrX");
+            var chartAreaGyrY = ch_dataPlot.ChartAreas.Add("CaGyrY");
+            var chartAreaGyrZ = ch_dataPlot.ChartAreas.Add("CaGyrZ");
 
-            ch_AccPlot.Series[0] = this.ch_AccPlot.Series.Add("AccX");
-            ch_AccPlot.Series[1] = this.ch_AccPlot.Series.Add("AccY");
-            ch_AccPlot.Series[2] = this.ch_AccPlot.Series.Add("AccZ");
+            ch_dataPlot.Series[0] = this.ch_dataPlot.Series.Add("AccX");
+            ch_dataPlot.Series[1] = this.ch_dataPlot.Series.Add("AccY");
+            ch_dataPlot.Series[2] = this.ch_dataPlot.Series.Add("AccZ");
+            ch_dataPlot.Series[3] = this.ch_dataPlot.Series.Add("GyrX");
+            ch_dataPlot.Series[4] = this.ch_dataPlot.Series.Add("GyrY");
+            ch_dataPlot.Series[5] = this.ch_dataPlot.Series.Add("GyrZ");
 
-            ch_AccPlot.Series[0].ChartArea = chartAreaX.Name;
-            ch_AccPlot.Series[1].ChartArea = chartAreaY.Name;
-            ch_AccPlot.Series[2].ChartArea = chartAreaZ.Name;
+            var leg1 = ch_dataPlot.Legends.Add("l1");
+            var leg2 = ch_dataPlot.Legends.Add("l2");
+            var leg3 = ch_dataPlot.Legends.Add("l3");
+            var leg4 = ch_dataPlot.Legends.Add("l4");
+            var leg5 = ch_dataPlot.Legends.Add("l5");
+            var leg6 = ch_dataPlot.Legends.Add("l6");
 
-            chartAreaX.AlignWithChartArea = chartAreaZ.Name;
-            chartAreaY.AlignWithChartArea = chartAreaZ.Name;
+            ch_dataPlot.Series[0].ChartArea = chartAreaAccX.Name;
+            ch_dataPlot.Series[1].ChartArea = chartAreaAccY.Name;
+            ch_dataPlot.Series[2].ChartArea = chartAreaAccZ.Name;
+            ch_dataPlot.Series[3].ChartArea = chartAreaGyrX.Name;
+            ch_dataPlot.Series[4].ChartArea = chartAreaGyrY.Name;
+            ch_dataPlot.Series[5].ChartArea = chartAreaGyrZ.Name;
+
+            ch_dataPlot.Series[0].Legend = leg1.Name;
+            ch_dataPlot.Series[1].Legend = leg2.Name;
+            ch_dataPlot.Series[2].Legend = leg3.Name;
+            ch_dataPlot.Series[3].Legend = leg4.Name;
+            ch_dataPlot.Series[4].Legend = leg5.Name;
+            ch_dataPlot.Series[5].Legend = leg6.Name;
+
+            chartAreaAccY.AlignWithChartArea = chartAreaAccX.Name;
+            chartAreaAccZ.AlignWithChartArea = chartAreaAccX.Name;
+            chartAreaGyrY.AlignWithChartArea = chartAreaGyrX.Name;
+            chartAreaGyrZ.AlignWithChartArea = chartAreaGyrX.Name;
             //chartAreaZ.AlignWithChartArea = chartAreaZ.Name;
 
-            ch_AccPlot.Series[0].ChartType = SeriesChartType.FastLine;
-            ch_AccPlot.Series[1].ChartType = SeriesChartType.FastLine;
-            ch_AccPlot.Series[2].ChartType = SeriesChartType.FastLine;
-
+            ch_dataPlot.Series[0].ChartType = SeriesChartType.FastLine;
+            ch_dataPlot.Series[1].ChartType = SeriesChartType.FastLine;
+            ch_dataPlot.Series[2].ChartType = SeriesChartType.FastLine;
+            ch_dataPlot.Series[3].ChartType = SeriesChartType.FastLine;
+            ch_dataPlot.Series[4].ChartType = SeriesChartType.FastLine;
+            ch_dataPlot.Series[5].ChartType = SeriesChartType.FastLine;
             //ch_AccPlot.Series[0]
             //ch_AccPlot.Series[1].AxisLabel = "Y";
             //ch_AccPlot.Series[2].AxisLabel = "Z";
 
+            //Acc
+            chartAreaAccX.Position.X = 0;
+            chartAreaAccX.Position.Y = 0;
+            chartAreaAccX.Position.Height = 33;
+            chartAreaAccX.Position.Width = 49;
+            chartAreaAccY.Position.Y = chartAreaAccX.Position.Bottom + 1;
+            chartAreaAccY.Position.Height = chartAreaAccX.Position.Height;
+            chartAreaAccY.Position.Width = chartAreaAccX.Position.Width;
+            chartAreaAccZ.Position.Y = chartAreaAccY.Position.Bottom + 1;
+            chartAreaAccZ.Position.Height = chartAreaAccY.Position.Height;
+            chartAreaAccZ.Position.Width = chartAreaAccY.Position.Width;
 
-            chartAreaX.Position.Y = 0;
-            chartAreaX.Position.Height = 33;
-            chartAreaX.Position.Width = 100;
-            chartAreaY.Position.Y = chartAreaX.Position.Bottom + 1;
-            chartAreaY.Position.Height = chartAreaX.Position.Height;
-            chartAreaY.Position.Width = chartAreaX.Position.Width;
-            chartAreaZ.Position.Y = chartAreaY.Position.Bottom + 1;
-            chartAreaZ.Position.Height = chartAreaY.Position.Height;
-            chartAreaZ.Position.Width = chartAreaY.Position.Width;
+            //Gyr
+            chartAreaGyrX.Position.X = 51;
+            chartAreaGyrX.Position.Y = 0;
+            chartAreaGyrX.Position.Height = 33;
+            chartAreaGyrX.Position.Width = 49;
+            chartAreaGyrY.Position.Y = chartAreaGyrX.Position.Bottom + 1;
+            chartAreaGyrY.Position.Height = chartAreaGyrX.Position.Height;
+            chartAreaGyrY.Position.Width = chartAreaGyrX.Position.Width;
+            chartAreaGyrZ.Position.Y = chartAreaGyrY.Position.Bottom + 1;
+            chartAreaGyrZ.Position.Height = chartAreaGyrY.Position.Height;
+            chartAreaGyrZ.Position.Width = chartAreaGyrY.Position.Width;
 
-            chartAreaX.AxisX.Maximum = 500;
-            chartAreaX.AxisX.Minimum = 0;
-            chartAreaY.AxisX.Maximum = 500;
-            chartAreaY.AxisX.Minimum = 0;
-            chartAreaZ.AxisX.Maximum = 500;
-            chartAreaZ.AxisX.Minimum = 0;
+            leg1.Position.Auto = false;
+            leg1.Position = new ElementPosition(chartAreaAccX.Position.X + 40, chartAreaAccX.Position.Y, 10, 10);
+            leg2.Position.Auto = false;
+            leg2.Position = new ElementPosition(chartAreaAccX.Position.X + 40, chartAreaAccY.Position.Y, 10, 10);
+            leg3.Position.Auto = false;
+            leg3.Position = new ElementPosition(chartAreaAccX.Position.X + 40, chartAreaAccZ.Position.Y, 10, 10);
+            leg4.Position.Auto = false;
+            leg4.Position = new ElementPosition(chartAreaGyrX.Position.X + 40, chartAreaGyrX.Position.Y, 10, 10);
+            leg5.Position.Auto = false;
+            leg5.Position = new ElementPosition(chartAreaGyrX.Position.X + 40, chartAreaGyrY.Position.Y, 10, 10);
+            leg6.Position.Auto = false;
+            leg6.Position = new ElementPosition(chartAreaGyrX.Position.X + 40, chartAreaGyrZ.Position.Y, 10, 10);
+
+            chartAreaAccX.AxisX.Maximum = _maxNumOfChartValues;
+            chartAreaAccX.AxisX.Minimum = 0;
+            chartAreaAccY.AxisX.Maximum = chartAreaAccX.AxisX.Maximum;
+            chartAreaAccY.AxisX.Minimum = 0;
+            chartAreaAccZ.AxisX.Maximum = chartAreaAccX.AxisX.Maximum;
+            chartAreaAccZ.AxisX.Minimum = 0;
+            chartAreaGyrX.AxisX.Maximum = chartAreaAccX.AxisX.Maximum;
+            chartAreaGyrX.AxisX.Minimum = 0;
+            chartAreaGyrY.AxisX.Maximum = chartAreaAccX.AxisX.Maximum;
+            chartAreaGyrY.AxisX.Minimum = 0;
+            chartAreaGyrZ.AxisX.Maximum = chartAreaAccX.AxisX.Maximum;
+            chartAreaGyrZ.AxisX.Minimum = 0;
 
             //chartAreaX.AxisY.Maximum = 20;
             //chartAreaX.AxisY.Minimum = -chartAreaX.AxisY.Maximum;
@@ -253,38 +312,53 @@ namespace BLE_Drive_UI
             //chartAreaZ.AxisY.Maximum = chartAreaX.AxisY.Maximum;
             //chartAreaZ.AxisY.Minimum = -chartAreaX.AxisY.Maximum;
 
-            chartAreaX.AxisX.MajorGrid.Enabled = false;
-            chartAreaX.AxisY.MajorGrid.Enabled = false;
-            chartAreaY.AxisX.MajorGrid.Enabled = false;
-            chartAreaY.AxisY.MajorGrid.Enabled = false;
-            chartAreaZ.AxisX.MajorGrid.Enabled = false;
-            chartAreaZ.AxisY.MajorGrid.Enabled = false;
+            chartAreaAccX.AxisX.MajorGrid.Enabled = false;
+            chartAreaAccX.AxisY.MajorGrid.Enabled = false;
+            chartAreaAccY.AxisX.MajorGrid.Enabled = false;
+            chartAreaAccY.AxisY.MajorGrid.Enabled = false;
+            chartAreaAccZ.AxisX.MajorGrid.Enabled = false;
+            chartAreaAccZ.AxisY.MajorGrid.Enabled = false;
+            chartAreaGyrX.AxisX.MajorGrid.Enabled = false;
+            chartAreaGyrX.AxisY.MajorGrid.Enabled = false;
+            chartAreaGyrY.AxisX.MajorGrid.Enabled = false;
+            chartAreaGyrY.AxisY.MajorGrid.Enabled = false;
+            chartAreaGyrZ.AxisX.MajorGrid.Enabled = false;
+            chartAreaGyrZ.AxisY.MajorGrid.Enabled = false;
 
-            chartAreaX.AxisY.Title = "AccX in m/s^2";
-            chartAreaY.AxisY.Title = "AccY in m/s^2";
-            chartAreaZ.AxisY.Title = "AccZ in m/s^2";
+            //chartAreaAccX.AxisY.Title = "AccX in m/s^2";
+            //chartAreaAccY.AxisY.Title = "AccY in m/s^2";
+            //chartAreaAccZ.AxisY.Title = "AccZ in m/s^2";
 
-            ch_AccPlot.Series[0].BorderWidth = 2;
-            ch_AccPlot.Series[1].BorderWidth = 2;
-            ch_AccPlot.Series[2].BorderWidth = 2;
+            ch_dataPlot.Series[0].BorderWidth = 2;
+            ch_dataPlot.Series[1].BorderWidth = 2;
+            ch_dataPlot.Series[2].BorderWidth = 2;
+            ch_dataPlot.Series[3].BorderWidth = 2;
+            ch_dataPlot.Series[4].BorderWidth = 2;
+            ch_dataPlot.Series[5].BorderWidth = 2;
         }
 
-        private void update_accChart(object sender, accelerationDataEventArgs e)
+        private void update_dataChart(object sender, imuDataEventArgs e)
         {
             lock(m_chartLock)
             {
-                ch_AccPlot.Invoke((Action)delegate
+                ch_dataPlot.Invoke((Action)delegate
                 {
-                    ch_AccPlot.Series["AccX"].Points.AddXY(_currentChartValue, e.Accx);
-                    ch_AccPlot.Series["AccY"].Points.AddXY(_currentChartValue, e.Accy);
-                    ch_AccPlot.Series["AccZ"].Points.AddXY(_currentChartValue, e.Accz);
+                    ch_dataPlot.Series[0].Points.AddXY(_currentChartValue, e.Accx);
+                    ch_dataPlot.Series[1].Points.AddXY(_currentChartValue, e.Accy);
+                    ch_dataPlot.Series[2].Points.AddXY(_currentChartValue, e.Accz);
+                    ch_dataPlot.Series[3].Points.AddXY(_currentChartValue, e.Gyrx);
+                    ch_dataPlot.Series[4].Points.AddXY(_currentChartValue, e.Gyry);
+                    ch_dataPlot.Series[5].Points.AddXY(_currentChartValue, e.Gyrz);
                     _currentChartValue++;
                     if (_currentChartValue >= _maxNumOfChartValues)
                     {
                         _currentChartValue = 0;
-                        ch_AccPlot.Series[0].Points.Clear();
-                        ch_AccPlot.Series[1].Points.Clear();
-                        ch_AccPlot.Series[2].Points.Clear();
+                        ch_dataPlot.Series[0].Points.Clear();
+                        ch_dataPlot.Series[1].Points.Clear();
+                        ch_dataPlot.Series[2].Points.Clear();
+                        ch_dataPlot.Series[3].Points.Clear();
+                        ch_dataPlot.Series[4].Points.Clear();
+                        ch_dataPlot.Series[5].Points.Clear();
                     }
                 });
             }

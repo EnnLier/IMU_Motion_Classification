@@ -29,13 +29,13 @@ namespace BLE_Drive_UI.src
         public bool _busy;
         public UInt16 BatteryLevel;
 
-        private static UInt16 _packetsize = 16;
+        private static UInt16 _packetsize = 22;
 
         private System.Timers.Timer UpdateMainwindowTimer = new System.Timers.Timer();
 
         public event EventHandler<statusChangedEventArgs> StatusChanged;
         public event EventHandler<changeLabelEventArgs> ChangeLabel;
-        public event EventHandler<accelerationDataEventArgs> UpdateChart;
+        public event EventHandler<imuDataEventArgs> UpdateChart;
         public event EventHandler SelectedDeviceFound;
 
 
@@ -52,7 +52,8 @@ namespace BLE_Drive_UI.src
 
         public BLEdriver()
         {
-            //ClearStringBuffer();
+            //Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+            CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-US");
             Connected = false;
             isSaving = false;
             isStreaming = false;
@@ -314,9 +315,7 @@ namespace BLE_Drive_UI.src
             {
                 var data = new Byte[_packetsize];                
                 reader.ReadBytes(data);
-
-
-                var scalingFactor = (1.00 / (1 << 14));
+                                
                 var id = data[0];
                 var calib = data[1];
 
@@ -325,22 +324,28 @@ namespace BLE_Drive_UI.src
                 calibration[2] = ((calib >> 2) & 0x03).ToString();      //acc
                 calibration[3] = ((calib) & 0x03).ToString();           //mag
 
-
-                //Console.WriteLine(calib);
+                var off = 2;
+                var scalingFactor = (1.00 / (1 << 14));
                 float quatW, quatX, quatY, quatZ;
-                quatW = (float)scalingFactor * ((Int16)(data[2] | (data[3] << 8)));
-                quatX = (float)scalingFactor * ((Int16)(data[4] | (data[5] << 8)));
-                quatY = (float)scalingFactor * ((Int16)(data[6] | (data[7] << 8)));
-                quatZ = (float)scalingFactor * ((Int16)(data[8] | (data[9] << 8)));
+                quatW = (float)scalingFactor * ((Int16)(data[off + 0] | (data[off + 1] << 8)));
+                quatX = (float)scalingFactor * ((Int16)(data[off + 2] | (data[off + 3] << 8)));
+                quatY = (float)scalingFactor * ((Int16)(data[off + 4] | (data[off + 5] << 8)));
+                quatZ = (float)scalingFactor * ((Int16)(data[off + 6] | (data[off + 7] << 8)));
 
-                var off = 10;
+                off = 10;
                 scalingFactor = (1.00 / 100.0);// 1m/s^2 = 100 LSB 
                 float x_a, y_a, z_a;
                 x_a = (float)scalingFactor * ((Int16)(data[off + 0] | (data[off + 1] << 8)));
                 y_a = (float)scalingFactor * ((Int16)(data[off + 2] | (data[off + 3] << 8)));
                 z_a = (float)scalingFactor * ((Int16)(data[off + 4] | (data[off + 5] << 8)));
 
-                Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+                off = 16;
+                scalingFactor = (1.00 / 16.0);// 1dps = 16 LSB
+                float gyrx, gyry, gyrz;
+                gyrx = (float)scalingFactor * ((Int16)(data[off + 0] | (data[off + 1] << 8)));
+                gyry = (float)scalingFactor * ((Int16)(data[off + 2] | (data[off + 3] << 8)));
+                gyrz = (float)scalingFactor * ((Int16)(data[off + 4] | (data[off + 5] << 8)));
+
 
                 var str = id.ToString() + " " + calibration[0] + " " + calibration[1] + " " + calibration[2] + " " + calibration[3] + " " + quatW.ToString("0.0000") + " " + quatX.ToString("0.0000") + " " + quatY.ToString("0.0000") + " " + quatZ.ToString("0.0000") + " "
                     + x_a.ToString("0.0000") + " " + y_a.ToString("0.0000") + " " + z_a.ToString("0.0000");
@@ -356,7 +361,7 @@ namespace BLE_Drive_UI.src
                 }
                 if (isPlotting)
                 {
-                    OnaccelerationData(x_a, y_a, z_a);
+                    OnaccelerationData(x_a, y_a, z_a, gyrx, gyry, gyrz);
                 }
 
             }
@@ -458,13 +463,16 @@ namespace BLE_Drive_UI.src
             }
         }
 
-        protected virtual void OnaccelerationData(float x, float y, float z)
+        protected virtual void OnaccelerationData(float x, float y, float z, float gx, float gy, float gz)
         {
-            accelerationDataEventArgs e = new accelerationDataEventArgs();
+            imuDataEventArgs e = new imuDataEventArgs();
             e.Accx = x;
             e.Accy = y;
             e.Accz = z;
-            EventHandler<accelerationDataEventArgs> handler = UpdateChart;
+            e.Gyrx = gx;
+            e.Gyry = gy;
+            e.Gyrz = gz;
+            EventHandler<imuDataEventArgs> handler = UpdateChart;
             if (handler != null)
             {
                 handler(this, e);
@@ -497,11 +505,14 @@ namespace BLE_Drive_UI.src
     }
     
 
-    public class accelerationDataEventArgs : EventArgs
+    public class imuDataEventArgs : EventArgs
     {
         public float Accx { get; set; }
         public float Accy { get; set; }
         public float Accz { get; set; }
+        public float Gyrx { get; set; }
+        public float Gyry { get; set; }
+        public float Gyrz { get; set; }
     }
 
     public class changeLabelEventArgs : EventArgs
