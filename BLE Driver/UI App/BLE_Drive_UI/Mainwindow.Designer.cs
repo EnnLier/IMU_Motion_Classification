@@ -29,6 +29,9 @@ namespace BLE_Drive_UI
         /// </summary>
         private void InitializeComponent()
         {
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Legend legend1 = new System.Windows.Forms.DataVisualization.Charting.Legend();
+            System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
             this.pb_Refresh_List = new System.Windows.Forms.Button();
             this.lv_Device_List = new System.Windows.Forms.ListView();
             this.name = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
@@ -46,6 +49,10 @@ namespace BLE_Drive_UI
             this.l_gyr = new System.Windows.Forms.Label();
             this.l_sys = new System.Windows.Forms.Label();
             this.l_acc = new System.Windows.Forms.Label();
+            this.b_recalibrate = new System.Windows.Forms.Button();
+            this.ch_AccPlot = new System.Windows.Forms.DataVisualization.Charting.Chart();
+            this.cb_plotAcc = new System.Windows.Forms.CheckBox();
+            ((System.ComponentModel.ISupportInitialize)(this.ch_AccPlot)).BeginInit();
             this.SuspendLayout();
             // 
             // pb_Refresh_List
@@ -69,7 +76,7 @@ namespace BLE_Drive_UI
             this.lv_Device_List.HideSelection = false;
             this.lv_Device_List.Location = new System.Drawing.Point(133, 30);
             this.lv_Device_List.Name = "lv_Device_List";
-            this.lv_Device_List.Size = new System.Drawing.Size(682, 420);
+            this.lv_Device_List.Size = new System.Drawing.Size(318, 420);
             this.lv_Device_List.TabIndex = 1;
             this.lv_Device_List.UseCompatibleStateImageBehavior = false;
             this.lv_Device_List.View = System.Windows.Forms.View.Details;
@@ -77,7 +84,7 @@ namespace BLE_Drive_UI
             // name
             // 
             this.name.Text = "Name";
-            this.name.Width = 248;
+            this.name.Width = 160;
             // 
             // ID
             // 
@@ -134,7 +141,7 @@ namespace BLE_Drive_UI
             // labelAcc
             // 
             this.labelAcc.AutoSize = true;
-            this.labelAcc.Location = new System.Drawing.Point(892, 124);
+            this.labelAcc.Location = new System.Drawing.Point(1044, 117);
             this.labelAcc.Name = "labelAcc";
             this.labelAcc.Size = new System.Drawing.Size(29, 13);
             this.labelAcc.TabIndex = 7;
@@ -143,7 +150,7 @@ namespace BLE_Drive_UI
             // labelSys
             // 
             this.labelSys.AutoSize = true;
-            this.labelSys.Location = new System.Drawing.Point(893, 58);
+            this.labelSys.Location = new System.Drawing.Point(1045, 51);
             this.labelSys.Name = "labelSys";
             this.labelSys.Size = new System.Drawing.Size(27, 13);
             this.labelSys.TabIndex = 8;
@@ -152,7 +159,7 @@ namespace BLE_Drive_UI
             // labelGyr
             // 
             this.labelGyr.AutoSize = true;
-            this.labelGyr.Location = new System.Drawing.Point(894, 91);
+            this.labelGyr.Location = new System.Drawing.Point(1046, 84);
             this.labelGyr.Name = "labelGyr";
             this.labelGyr.Size = new System.Drawing.Size(26, 13);
             this.labelGyr.TabIndex = 9;
@@ -161,7 +168,7 @@ namespace BLE_Drive_UI
             // labelMag
             // 
             this.labelMag.AutoSize = true;
-            this.labelMag.Location = new System.Drawing.Point(891, 157);
+            this.labelMag.Location = new System.Drawing.Point(1043, 150);
             this.labelMag.Name = "labelMag";
             this.labelMag.Size = new System.Drawing.Size(31, 13);
             this.labelMag.TabIndex = 10;
@@ -170,7 +177,7 @@ namespace BLE_Drive_UI
             // l_mag
             // 
             this.l_mag.AutoSize = true;
-            this.l_mag.Location = new System.Drawing.Point(939, 157);
+            this.l_mag.Location = new System.Drawing.Point(1091, 150);
             this.l_mag.Name = "l_mag";
             this.l_mag.Size = new System.Drawing.Size(13, 13);
             this.l_mag.TabIndex = 14;
@@ -179,7 +186,7 @@ namespace BLE_Drive_UI
             // l_gyr
             // 
             this.l_gyr.AutoSize = true;
-            this.l_gyr.Location = new System.Drawing.Point(939, 91);
+            this.l_gyr.Location = new System.Drawing.Point(1091, 84);
             this.l_gyr.Name = "l_gyr";
             this.l_gyr.Size = new System.Drawing.Size(13, 13);
             this.l_gyr.TabIndex = 13;
@@ -188,7 +195,7 @@ namespace BLE_Drive_UI
             // l_sys
             // 
             this.l_sys.AutoSize = true;
-            this.l_sys.Location = new System.Drawing.Point(939, 58);
+            this.l_sys.Location = new System.Drawing.Point(1091, 51);
             this.l_sys.Name = "l_sys";
             this.l_sys.Size = new System.Drawing.Size(13, 13);
             this.l_sys.TabIndex = 12;
@@ -197,15 +204,55 @@ namespace BLE_Drive_UI
             // l_acc
             // 
             this.l_acc.AutoSize = true;
-            this.l_acc.Location = new System.Drawing.Point(939, 124);
+            this.l_acc.Location = new System.Drawing.Point(1091, 117);
             this.l_acc.Name = "l_acc";
             this.l_acc.Size = new System.Drawing.Size(13, 13);
             this.l_acc.TabIndex = 11;
             this.l_acc.Text = "0";
             // 
+            // b_recalibrate
+            // 
+            this.b_recalibrate.Location = new System.Drawing.Point(1036, 176);
+            this.b_recalibrate.Name = "b_recalibrate";
+            this.b_recalibrate.Size = new System.Drawing.Size(76, 28);
+            this.b_recalibrate.TabIndex = 15;
+            this.b_recalibrate.Text = "Recalibrate";
+            this.b_recalibrate.UseVisualStyleBackColor = true;
+            this.b_recalibrate.Click += new System.EventHandler(this.b_recalibrate_Click);
+            // 
+            // ch_AccPlot
+            // 
+            chartArea1.Name = "ChartArea1";
+            this.ch_AccPlot.ChartAreas.Add(chartArea1);
+            legend1.Name = "Legend1";
+            this.ch_AccPlot.Legends.Add(legend1);
+            this.ch_AccPlot.Location = new System.Drawing.Point(471, 30);
+            this.ch_AccPlot.Name = "ch_AccPlot";
+            series1.ChartArea = "ChartArea1";
+            series1.Legend = "Legend1";
+            series1.Name = "Series1";
+            this.ch_AccPlot.Series.Add(series1);
+            this.ch_AccPlot.Size = new System.Drawing.Size(482, 499);
+            this.ch_AccPlot.TabIndex = 16;
+            this.ch_AccPlot.Text = "chart1";
+            // 
+            // cb_plotAcc
+            // 
+            this.cb_plotAcc.AutoSize = true;
+            this.cb_plotAcc.Location = new System.Drawing.Point(21, 153);
+            this.cb_plotAcc.Name = "cb_plotAcc";
+            this.cb_plotAcc.Size = new System.Drawing.Size(66, 17);
+            this.cb_plotAcc.TabIndex = 17;
+            this.cb_plotAcc.Text = "Plot Acc";
+            this.cb_plotAcc.UseVisualStyleBackColor = true;
+            this.cb_plotAcc.CheckedChanged += new System.EventHandler(this.cb_plotAcc_CheckedChanged);
+            // 
             // mw_form
             // 
             this.ClientSize = new System.Drawing.Size(1147, 551);
+            this.Controls.Add(this.cb_plotAcc);
+            this.Controls.Add(this.ch_AccPlot);
+            this.Controls.Add(this.b_recalibrate);
             this.Controls.Add(this.l_mag);
             this.Controls.Add(this.l_gyr);
             this.Controls.Add(this.l_sys);
@@ -222,6 +269,8 @@ namespace BLE_Drive_UI
             this.Controls.Add(this.pb_Refresh_List);
             this.Name = "mw_form";
             this.Text = "Mainwindow";
+            this.Load += new System.EventHandler(this.mw_form_Load);
+            ((System.ComponentModel.ISupportInitialize)(this.ch_AccPlot)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -246,6 +295,9 @@ namespace BLE_Drive_UI
         private System.Windows.Forms.Label l_gyr;
         private System.Windows.Forms.Label l_sys;
         private System.Windows.Forms.Label l_acc;
+        private System.Windows.Forms.Button b_recalibrate;
+        private System.Windows.Forms.DataVisualization.Charting.Chart ch_AccPlot;
+        private System.Windows.Forms.CheckBox cb_plotAcc;
     }
 }
 

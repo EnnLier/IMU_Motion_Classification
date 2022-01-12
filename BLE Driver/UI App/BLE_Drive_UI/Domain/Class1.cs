@@ -46,7 +46,7 @@ namespace BLE_Drive_UI.Domain
         public bool canPair { get; }
         public GattCharacteristic BatteryCharacteristic { get; set; }
         public GattCharacteristic BLEuartCharacteristic { get; set; }
-
+        public GattCharacteristic BLEuartCharacteristic_write { get; set; }
         //public Guid Service { get;set;}
         //public Dictionary<Guid,Dictionary<Guid,ushort>> HandlesOfCharacteristicsOfService { get;set;}
 

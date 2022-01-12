@@ -23,7 +23,7 @@ namespace BLE_Drive_UI.src
         public BLEdevice _deviceInformation { get; set; } 
         public bool isSaving { get; set;}
         public bool isStreaming { get; set; }
-
+        public bool isPlotting { get; set; }
 
         public bool Connected;
         public bool _busy;
@@ -35,6 +35,7 @@ namespace BLE_Drive_UI.src
 
         public event EventHandler<statusChangedEventArgs> StatusChanged;
         public event EventHandler<changeLabelEventArgs> ChangeLabel;
+        public event EventHandler<accelerationDataEventArgs> UpdateChart;
         public event EventHandler SelectedDeviceFound;
 
 
@@ -147,6 +148,11 @@ namespace BLE_Drive_UI.src
             }
         }
 
+        public void recalibrate_imu()
+        {
+            WriteToBLEDevice("Recalibrate");
+        }
+
         private void sendData(String data)
         {
             try
@@ -246,8 +252,18 @@ namespace BLE_Drive_UI.src
                                     _deviceInformation.BLEuartCharacteristic = characteristic;
                                 }
                             }
-                        }   
-                        if(serv.Uuid == new Guid(BLEUUID.BLEUART_BATTERY_SERVICE))
+                        }
+                        if (properties.HasFlag(GattCharacteristicProperties.Write))
+                        {
+                            //BleuartCharacteristic = characteristic;
+                            //GattCommunicationStatus status = await characteristic.WriteClientCharacteristicConfigurationDescriptorAsync(
+                            //    GattClientCharacteristicConfigurationDescriptorValue.Indicate);
+                            //if (status == GattCommunicationStatus.Success)
+                            //{
+                                _deviceInformation.BLEuartCharacteristic_write = characteristic;
+                            //}
+                        }
+                        if (serv.Uuid == new Guid(BLEUUID.BLEUART_BATTERY_SERVICE))
                         {
                             if (properties.HasFlag(GattCharacteristicProperties.Notify))
                             {
@@ -338,7 +354,10 @@ namespace BLE_Drive_UI.src
                 {
                     _doubleBuffer.addData(str);
                 }
-               
+                if (isPlotting)
+                {
+                    OnaccelerationData(x_a, y_a, z_a);
+                }
 
             }
 
@@ -361,11 +380,16 @@ namespace BLE_Drive_UI.src
             var writer = new DataWriter();
             writer.ByteOrder = ByteOrder.LittleEndian;
             writer.WriteString(data);
-            GattCommunicationStatus result = await _deviceInformation.BLEuartCharacteristic.WriteValueAsync(writer.DetachBuffer());
-            if (result == GattCommunicationStatus.Success)
-            {
-                Console.WriteLine(" Successfully wrote to device");
-            }
+            //Debug.WriteLine(_deviceInformation.BLEuartCharacteristic_write.CharacteristicProperties);
+            
+            GattCommunicationStatus result = await _deviceInformation.BLEuartCharacteristic_write.WriteValueAsync(writer.DetachBuffer());
+            //var result = await _deviceInformation.BLEuartCharacteristic.
+            //GattWriteResult result = await _deviceInformation.BLEuartCharacteristic.WriteValueWithResultAsync(writer.DetachBuffer());
+            //Debug.WriteLine(result.ProtocolError.ToString()); Debug.WriteLine(result.Status.ToString());
+            //if (result == GattWriteResult.)
+            //{
+            //    Console.WriteLine(" Successfully wrote to device");
+            //}
         }
 
         private String ClearStringBuffer(String stringBuffer)
@@ -402,6 +426,11 @@ namespace BLE_Drive_UI.src
             Console.WriteLine("Connection Status changed: " + sender.ConnectionStatus);
             Connected = sender.ConnectionStatus.ToString() == "Connected" ? true : false;
             OnStatusChanged(sender.ConnectionStatus.ToString());
+            if(!Connected)
+            {
+                for (int i = 0; i < 4; i++)
+                    calibration[i] = "0";
+            }
         }
 
         protected virtual void OnStatusChanged(String status)
@@ -423,6 +452,19 @@ namespace BLE_Drive_UI.src
             e.label = label;
             e.value = value;
             EventHandler<changeLabelEventArgs> handler = ChangeLabel;
+            if (handler != null)
+            {
+                handler(this, e);
+            }
+        }
+
+        protected virtual void OnaccelerationData(float x, float y, float z)
+        {
+            accelerationDataEventArgs e = new accelerationDataEventArgs();
+            e.Accx = x;
+            e.Accy = y;
+            e.Accz = z;
+            EventHandler<accelerationDataEventArgs> handler = UpdateChart;
             if (handler != null)
             {
                 handler(this, e);
@@ -452,6 +494,14 @@ namespace BLE_Drive_UI.src
     {
         public String Status { get; set; }
         public DateTime Timestamp { get; set; }
+    }
+    
+
+    public class accelerationDataEventArgs : EventArgs
+    {
+        public float Accx { get; set; }
+        public float Accy { get; set; }
+        public float Accz { get; set; }
     }
 
     public class changeLabelEventArgs : EventArgs

@@ -11,6 +11,8 @@ using BLE_Drive_UI.src;
 using BLE_Drive_UI.Domain;
 using System.Diagnostics;
 using Windows.Devices.Enumeration;
+//using System.Web.UI.DataVisualization.Charting;
+using System.Windows.Forms.DataVisualization.Charting;
 
 namespace BLE_Drive_UI
 {
@@ -18,7 +20,11 @@ namespace BLE_Drive_UI
     {
         private BLEwatcher _BLEwatcher;
         private BLEdriver _BLEdriver;
-        private Dictionary<System.Windows.Forms.Label, String> FormCollection;
+
+        private static int _maxNumOfChartValues = 500;
+        private int _currentChartValue = 0;
+
+        private object m_chartLock = new object();
 
         public mw_form()
         {
@@ -26,13 +32,15 @@ namespace BLE_Drive_UI
             _BLEdriver = new BLEdriver();
             _BLEdriver.StatusChanged += BLEdriver_StatusChanged;
             _BLEdriver.ChangeLabel += Form_ChangeLabel;
+            _BLEdriver.UpdateChart += update_accChart;
             InitializeComponent();
             
             cb_SaveToFile.Enabled = false;
             cb_StreamTCP.Enabled = false;
+            cb_plotAcc.Enabled = false;
+            b_recalibrate.Enabled = false;
 
-            this.FormCollection = new Dictionary<System.Windows.Forms.Label, string>();
-
+            initialize_accChart();
         }
 
         private void Mainwindow_Load(object sender, EventArgs e)
@@ -85,35 +93,46 @@ namespace BLE_Drive_UI
                 //Debug.WriteLine("Name: " + x.Name + "    label: " + e.label);
                 if (x.Name == e.label)
                 {
-                    x.Invoke((Action)delegate
+                    try
                     {
                         x.Text = e.value;
-                    });
+                    }
+                    catch (System.InvalidOperationException)
+                    {
+                        x.Invoke((Action)delegate
+                        {
+                            x.Text = e.value;
+                        });
+                    }
                 }
             }
         }
 
         private void BLEdriver_StatusChanged(object sender, statusChangedEventArgs e)
         {
+            var timestamp = e.Timestamp.ToString("HH:mm:ss");
+            
             try
             {
-                var timestamp = e.Timestamp.ToString("HH:mm:ss");
                 this.l_Driver_Status.Text = timestamp + "      " + e.Status;
-                //this.pb_connect_TCP.Enabled = _BLEdriver.Connected == true ? true : false;
                 this.cb_StreamTCP.Enabled = _BLEdriver.Connected == true ? true : false;
                 this.cb_SaveToFile.Enabled = _BLEdriver.Connected == true ? true : false;
+                this.cb_plotAcc.Enabled = _BLEdriver.Connected == true ? true : false;
+                this.b_recalibrate.Enabled = _BLEdriver.Connected == true ? true : false;
+
             }
             catch(System.InvalidOperationException)
             {
                 l_Driver_Status.Invoke((Action)delegate
                 {
-                    l_Driver_Status.Text = e.Status;
+                    this.l_Driver_Status.Text = timestamp + "      " + e.Status;
                 });
                 cb_StreamTCP.Invoke((Action)delegate
                 {
-                    //this.pb_connect_TCP.Enabled = _BLEdriver.Connected == true ? true : false;
                     this.cb_StreamTCP.Enabled = _BLEdriver.Connected == true ? true : false;
                     this.cb_SaveToFile.Enabled = _BLEdriver.Connected == true ? true : false;
+                    this.cb_plotAcc.Enabled = _BLEdriver.Connected == true ? true : false;
+                    this.b_recalibrate.Enabled = _BLEdriver.Connected == true ? true : false;
                 });
             }
             
@@ -135,6 +154,22 @@ namespace BLE_Drive_UI
             }
         }
 
+        private void cb_plotAcc_CheckedChanged(object sender, EventArgs e)
+        {
+            if (this.cb_plotAcc.Checked)
+            {
+                _currentChartValue = 0;
+                ch_AccPlot.Series[0].Points.Clear();
+                ch_AccPlot.Series[1].Points.Clear();
+                ch_AccPlot.Series[2].Points.Clear();
+                _BLEdriver.isPlotting = true;
+            }
+            else
+            {
+                _BLEdriver.isPlotting = false;
+            }
+        }
+
         private void cb_SaveToFile_CheckedChanged(object sender, EventArgs e)
         {
             if (this.cb_SaveToFile.Checked)
@@ -148,5 +183,113 @@ namespace BLE_Drive_UI
             }
         }
 
-}
+
+        private void b_recalibrate_Click(object sender, EventArgs e)
+        {
+            _BLEdriver.recalibrate_imu();
+        }
+
+        private void mw_form_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void initialize_accChart()
+        {
+            
+            this.ch_AccPlot.Series.Clear();
+
+            //ch_AccPlot.ChartType = SeriesChartType.Spline;
+
+            //this.ch_AccPlot.Series.Add("AccX");
+            //this.ch_AccPlot.Series.Add("AccY");
+            //this.ch_AccPlot.Series.Add("AccZ");
+            var chartAreaX = ch_AccPlot.ChartAreas.Add("X");
+            var chartAreaY = ch_AccPlot.ChartAreas.Add("Y");
+            var chartAreaZ = ch_AccPlot.ChartAreas.Add("Z");
+
+            ch_AccPlot.Series[0] = this.ch_AccPlot.Series.Add("AccX");
+            ch_AccPlot.Series[1] = this.ch_AccPlot.Series.Add("AccY");
+            ch_AccPlot.Series[2] = this.ch_AccPlot.Series.Add("AccZ");
+
+            ch_AccPlot.Series[0].ChartArea = chartAreaX.Name;
+            ch_AccPlot.Series[1].ChartArea = chartAreaY.Name;
+            ch_AccPlot.Series[2].ChartArea = chartAreaZ.Name;
+
+            chartAreaX.AlignWithChartArea = chartAreaZ.Name;
+            chartAreaY.AlignWithChartArea = chartAreaZ.Name;
+            //chartAreaZ.AlignWithChartArea = chartAreaZ.Name;
+
+            ch_AccPlot.Series[0].ChartType = SeriesChartType.FastLine;
+            ch_AccPlot.Series[1].ChartType = SeriesChartType.FastLine;
+            ch_AccPlot.Series[2].ChartType = SeriesChartType.FastLine;
+
+            //ch_AccPlot.Series[0]
+            //ch_AccPlot.Series[1].AxisLabel = "Y";
+            //ch_AccPlot.Series[2].AxisLabel = "Z";
+
+
+            chartAreaX.Position.Y = 0;
+            chartAreaX.Position.Height = 33;
+            chartAreaX.Position.Width = 100;
+            chartAreaY.Position.Y = chartAreaX.Position.Bottom + 1;
+            chartAreaY.Position.Height = chartAreaX.Position.Height;
+            chartAreaY.Position.Width = chartAreaX.Position.Width;
+            chartAreaZ.Position.Y = chartAreaY.Position.Bottom + 1;
+            chartAreaZ.Position.Height = chartAreaY.Position.Height;
+            chartAreaZ.Position.Width = chartAreaY.Position.Width;
+
+            chartAreaX.AxisX.Maximum = 500;
+            chartAreaX.AxisX.Minimum = 0;
+            chartAreaY.AxisX.Maximum = 500;
+            chartAreaY.AxisX.Minimum = 0;
+            chartAreaZ.AxisX.Maximum = 500;
+            chartAreaZ.AxisX.Minimum = 0;
+
+            //chartAreaX.AxisY.Maximum = 20;
+            //chartAreaX.AxisY.Minimum = -chartAreaX.AxisY.Maximum;
+            //chartAreaY.AxisY.Maximum = chartAreaX.AxisY.Maximum;
+            //chartAreaY.AxisY.Minimum = -chartAreaX.AxisY.Maximum;
+            //chartAreaZ.AxisY.Maximum = chartAreaX.AxisY.Maximum;
+            //chartAreaZ.AxisY.Minimum = -chartAreaX.AxisY.Maximum;
+
+            chartAreaX.AxisX.MajorGrid.Enabled = false;
+            chartAreaX.AxisY.MajorGrid.Enabled = false;
+            chartAreaY.AxisX.MajorGrid.Enabled = false;
+            chartAreaY.AxisY.MajorGrid.Enabled = false;
+            chartAreaZ.AxisX.MajorGrid.Enabled = false;
+            chartAreaZ.AxisY.MajorGrid.Enabled = false;
+
+            chartAreaX.AxisY.Title = "AccX in m/s^2";
+            chartAreaY.AxisY.Title = "AccY in m/s^2";
+            chartAreaZ.AxisY.Title = "AccZ in m/s^2";
+
+            ch_AccPlot.Series[0].BorderWidth = 2;
+            ch_AccPlot.Series[1].BorderWidth = 2;
+            ch_AccPlot.Series[2].BorderWidth = 2;
+        }
+
+        private void update_accChart(object sender, accelerationDataEventArgs e)
+        {
+            lock(m_chartLock)
+            {
+                ch_AccPlot.Invoke((Action)delegate
+                {
+                    ch_AccPlot.Series["AccX"].Points.AddXY(_currentChartValue, e.Accx);
+                    ch_AccPlot.Series["AccY"].Points.AddXY(_currentChartValue, e.Accy);
+                    ch_AccPlot.Series["AccZ"].Points.AddXY(_currentChartValue, e.Accz);
+                    _currentChartValue++;
+                    if (_currentChartValue >= _maxNumOfChartValues)
+                    {
+                        _currentChartValue = 0;
+                        ch_AccPlot.Series[0].Points.Clear();
+                        ch_AccPlot.Series[1].Points.Clear();
+                        ch_AccPlot.Series[2].Points.Clear();
+                    }
+                });
+            }
+        }
+
+
+    }
 }
