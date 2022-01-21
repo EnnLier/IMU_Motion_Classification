@@ -22,35 +22,41 @@ end
 % 
 
 % formatspec = '%s %f:%f:%f %f %f %f %f %f %f %f %f %f %f %f %f';
-formatspec = '%s %s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f';
+% formatspec = '%s %s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f';
+formatspec = '%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f';
+relevantdat =[1  0  0  0  0  0  1  1  1  1  1  1  1  1  1  1 ];
 dat = [];
-dT = [];
+% dT = [];
+t = [];
 for i = 1 : length(names)
     id = fopen(files{i,1});
     tmp = textscan(id,formatspec);
-    dT = [dT; getDatetime(tmp)];
-    tmp(:,[1,2]) = [];
+%     dT = [dT; getDatetime(tmp)];
+%     tmp(:,[1,2]) = [];
 %     tmp{1,1} = [];
     tmp2 = [];
-    for k = 6 : length(tmp)
-        tmp2 = [tmp2 tmp{1,k}(:,1)];
+    for k = 1 : length(tmp)
+        if relevantdat(k)
+            tmp2 = [tmp2 tmp{1,k}(:,1)];
+        end
     end
     dat = [dat; tmp2];
 end
 fclose('all')
 
-data.t = datetimeToTimestamp(dT);
-data.dt = dT;
-data.Qw = dat(:,1);
-data.Qx = dat(:,2);
-data.Qy = dat(:,3);
-data.Qz = dat(:,4);
-data.Accx = dat(:,5);
-data.Accy = dat(:,6);
-data.Accz = dat(:,7);
-data.Gyrx = dat(:,8);
-data.Gyry = dat(:,9);
-data.Gyrz = dat(:,10);
+% data.t = datetimeToTimestamp(dT);
+data.t = dat(:,1);
+% data.dt = dT;
+data.Qw = dat(:,2);
+data.Qx = dat(:,3);
+data.Qy = dat(:,4);
+data.Qz = dat(:,5);
+data.Accx = dat(:,6);
+data.Accy = dat(:,7);
+data.Accz = dat(:,8);
+data.Gyrx = dat(:,9);
+data.Gyry = dat(:,10);
+data.Gyrz = dat(:,11);
 data.Acc = [data.Accx, data.Accy, data.Accz];
 data.Velx = cumtrapz(data.t(:,1),data.Accx(:,1));
 data.Vely = cumtrapz(data.t(:,1),data.Accy(:,1));

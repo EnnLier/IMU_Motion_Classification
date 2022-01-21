@@ -3,7 +3,7 @@ clear
 close all
 
 % load("Messdaten_01-06-2022 13-08.mat");
-load('Messdaten_01-11-2022 17-22.mat')
+load('Messdaten_01-13-2022 15-55.mat')
 
 % X = Y
 % Y = Z
@@ -18,22 +18,43 @@ ey0 = [0 1 0]';
 ez0 = [0 0 1]';
 origin = [0,0,0];
 
-v = [data.Velx(:,1) , data.Vely(:,1) , data.Velz(:,1)];
-a = [data.Accx(:,1) , data.Accy(:,1) , data.Accz(:,1)];
-v_angles = zeros(size(v));
-v_len = zeros(size(v,1),1);
-for i = 1 : length(v)
-    v_angles(i,:) = getVelAngles(v(i,:)');
-    v_len(i,1) = norm(v(i,:)');
-%     v(i,:) = v(i,:)./v_len;
+AccThresh = 0.2;
+GyrThresh = 0.1;
+acc = zeros(size(data.Vel));
+v = zeros(size(data.Vel));
+for i = 1 : length(data.t)
+    if (data.Accx(i) >=  AccThresh || data.Accx(i) <= -AccThresh) && isRotating([data.Gyrx(i) data.Gyry(i) data.Gyrz(i)],GyrThresh)
+        acc(i,1) = data.Accx(i);
+    end
+    if (data.Accy(i) >=  AccThresh || data.Accy(i) <= -AccThresh) && isRotating([data.Gyrx(i) data.Gyry(i) data.Gyrz(i)],GyrThresh)
+        acc(i,2) = data.Accy(i);
+    end
+    if (data.Accz(i) >=  AccThresh || data.Accz(i) <= -AccThresh) && isRotating([data.Gyrx(i) data.Gyry(i) data.Gyrz(i)],GyrThresh)
+        acc(i,3) = data.Accz(i);
+    end
 end
+
+v(:,1) = cumtrapz(data.t(:),acc(:,1));
+v(:,2) = cumtrapz(data.t(:),acc(:,2));
+v(:,3) = cumtrapz(data.t(:),acc(:,3));
+
+% v = [data.Velx(:,1) , data.Vely(:,1) , data.Velz(:,1)];
+% data.Vel
+% a = [data.Accx(:,1) , data.Accy(:,1) , data.Accz(:,1)];
+% v_angles = zeros(size(v));
+% v_len = zeros(size(v,1),1);
+% for i = 1 : length(v)
+%     v_angles(i,:) = getVelAngles(v(i,:)');
+%     v_len(i,1) = norm(v(i,:)');
+%     v(i,:) = v(i,:)./v_len;
+% end
 
 figure
 plot(v)
 legend('x','y','z')
-figure
-plot(v_len)
-% return
+% figure
+% plot(v_len)
+return
 
 
 for i = 1 : 10 :length(data.t)
@@ -112,4 +133,13 @@ function [alpha, beta, gamma] = getVelAngles(Vel)
     alpha = atan2(sqrt(Vel(2)^2+Vel(3)^2),Vel(1));
     beta = atan2(sqrt(Vel(3)^2+Vel(1)^2),Vel(2));
     gamma = atan2(sqrt(Vel(1)^2+Vel(2)^2),Vel(3));
+end
+
+function rotating = isRotating(gyr,thresh)
+    if (gyr(1) < -thresh || gyr(1) > thresh) || (gyr(2) < -thresh || gyr(2) > thresh) || (gyr(3) < -thresh || gyr(3) > thresh)
+        rotating = true;
+    else
+        rotating = false;
+    end
+    rotating
 end
