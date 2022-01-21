@@ -191,12 +191,11 @@ namespace BLE_Drive_UI
         {
             if (this.cb_SaveToFile.Checked)
             {
-                _BLEdriver.isSaving = true;
+                _BLEdriver.startSaving();
             }
             else
             {
-                _BLEdriver.isSaving = false;
-                _BLEdriver.flushBuffer();
+                _BLEdriver.stopSaving();
             }
         }
 
