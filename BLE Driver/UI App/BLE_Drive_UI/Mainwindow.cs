@@ -28,26 +28,84 @@ namespace BLE_Drive_UI
 
         //private Thread DataPlotThread;
         private System.Windows.Forms.Timer PlotDataTimer = new System.Windows.Forms.Timer();
+        private System.Windows.Forms.Timer UpdateBatteryTimer = new System.Windows.Forms.Timer();
 
         public mw_form()
         {
             _BLEwatcher = new BLEwatcher();
             _BLEdriver = new BLEdriver();
             _BLEdriver.StatusChanged += BLEdriver_StatusChanged;
+            _BLEdriver.ConnectedChanged += BLEDriver_ConnectedChanged;
             _BLEdriver.ChangeLabel += Form_ChangeLabel;
-            //_BLEdriver.UpdateChart += update_dataChart;
             InitializeComponent();
-            
+
             cb_SaveToFile.Enabled = false;
             cb_StreamTCP.Enabled = false;
             cb_plotAcc.Enabled = false;
             b_recalibrate.Enabled = false;
+            p_BatteryPanel.Enabled = false;
 
             PlotDataTimer.Tick += new EventHandler(update_dataChart);
             PlotDataTimer.Interval = 20;
-            PlotDataTimer.Enabled = false;
+            PlotDataTimer.Enabled = true;
+
+            UpdateBatteryTimer.Tick += new EventHandler(update_battery);
+            UpdateBatteryTimer.Interval = 500;
 
             initialize_dataChart();
+        }
+
+        private void BLEDriver_ConnectedChanged(object sender, bool connected)
+        {
+            
+
+            if (connected)
+            {
+                p_BatteryPanel.BeginInvoke((Action)(() => this.UpdateBatteryTimer.Start()));
+            }
+            else
+            {
+                p_BatteryPanel.BeginInvoke((Action)(() => this.UpdateBatteryTimer.Stop()));
+            }
+        }
+
+
+        private void update_battery(object sender, System.EventArgs e)
+        {
+            var level = _BLEdriver.BatteryLevel;
+            l_batteryLabel.Text = level.ToString() + "%";
+            p_BatteryPanel.Width = level;
+            if (level <= 30 && level > 10)
+            {
+                p_BatteryPanel.BackColor = Color.FromArgb(255, 127, 0);
+            }
+            else if (level <= 10)
+            {
+                p_BatteryPanel.BackColor = Color.FromArgb(255, 0, 0);
+            }
+            else
+            {
+                p_BatteryPanel.BackColor = Color.FromArgb(0, 127, 0);
+            }
+            //try
+            //{
+
+            //    Console.WriteLine("Clean");
+            //}
+            //catch (System.InvalidOperationException)
+            //{
+
+            //    cb_StreamTCP.Invoke((Action)delegate
+            //    {
+            //        bar_BatteryBar.Value = level;
+            //    });
+            //}
+            //catch (Exception e)
+            //{
+            //    Console.WriteLine("New Exception on battery update");
+            //    Console.WriteLine(e.Message);
+            //    bar_BatteryBar.Value = level;
+            //}
         }
 
         private void Mainwindow_Load(object sender, EventArgs e)
@@ -129,7 +187,7 @@ namespace BLE_Drive_UI
                 this.cb_SaveToFile.Enabled = _BLEdriver.Connected == true ? true : false;
                 this.cb_plotAcc.Enabled = _BLEdriver.Connected == true ? true : false;
                 this.b_recalibrate.Enabled = _BLEdriver.Connected == true ? true : false;
-
+                this.p_BatteryPanel.Enabled = _BLEdriver.Connected == true ? true : false;
             }
             catch(System.InvalidOperationException)
             {
@@ -143,6 +201,8 @@ namespace BLE_Drive_UI
                     this.cb_SaveToFile.Enabled = _BLEdriver.Connected == true ? true : false;
                     this.cb_plotAcc.Enabled = _BLEdriver.Connected == true ? true : false;
                     this.b_recalibrate.Enabled = _BLEdriver.Connected == true ? true : false;
+                    this.p_BatteryPanel.Enabled = _BLEdriver.Connected == true ? true : false;
+
                 });
             }
             

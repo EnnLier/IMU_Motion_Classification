@@ -52,6 +52,8 @@ namespace BLE_Drive_UI
             this.b_recalibrate = new System.Windows.Forms.Button();
             this.ch_dataPlot = new System.Windows.Forms.DataVisualization.Charting.Chart();
             this.cb_plotAcc = new System.Windows.Forms.CheckBox();
+            this.p_BatteryPanel = new System.Windows.Forms.Panel();
+            this.l_batteryLabel = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.ch_dataPlot)).BeginInit();
             this.SuspendLayout();
             // 
@@ -220,14 +222,14 @@ namespace BLE_Drive_UI
             this.b_recalibrate.UseVisualStyleBackColor = true;
             this.b_recalibrate.Click += new System.EventHandler(this.b_recalibrate_Click);
             // 
-            // ch_AccPlot
+            // ch_dataPlot
             // 
             chartArea2.Name = "ChartArea1";
             this.ch_dataPlot.ChartAreas.Add(chartArea2);
             legend2.Name = "Legend1";
             this.ch_dataPlot.Legends.Add(legend2);
             this.ch_dataPlot.Location = new System.Drawing.Point(471, 30);
-            this.ch_dataPlot.Name = "ch_AccPlot";
+            this.ch_dataPlot.Name = "ch_dataPlot";
             series2.ChartArea = "ChartArea1";
             series2.Legend = "Legend1";
             series2.Name = "Series1";
@@ -247,9 +249,29 @@ namespace BLE_Drive_UI
             this.cb_plotAcc.UseVisualStyleBackColor = true;
             this.cb_plotAcc.CheckedChanged += new System.EventHandler(this.cb_plotAcc_CheckedChanged);
             // 
+            // p_BatteryPanel
+            // 
+            this.p_BatteryPanel.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(192)))), ((int)(((byte)(0)))));
+            this.p_BatteryPanel.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            this.p_BatteryPanel.Location = new System.Drawing.Point(2, 485);
+            this.p_BatteryPanel.Name = "p_BatteryPanel";
+            this.p_BatteryPanel.Size = new System.Drawing.Size(131, 44);
+            this.p_BatteryPanel.TabIndex = 19;
+            // 
+            // l_batteryLabel
+            // 
+            this.l_batteryLabel.AutoSize = true;
+            this.l_batteryLabel.Font = new System.Drawing.Font("Calibri", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.l_batteryLabel.Location = new System.Drawing.Point(35, 532);
+            this.l_batteryLabel.Name = "l_batteryLabel";
+            this.l_batteryLabel.Size = new System.Drawing.Size(56, 19);
+            this.l_batteryLabel.TabIndex = 20;
+            this.l_batteryLabel.Text = "Battery";
+            // 
             // mw_form
             // 
             this.ClientSize = new System.Drawing.Size(1416, 551);
+            this.Controls.Add(this.l_batteryLabel);
             this.Controls.Add(this.cb_plotAcc);
             this.Controls.Add(this.ch_dataPlot);
             this.Controls.Add(this.b_recalibrate);
@@ -267,6 +289,7 @@ namespace BLE_Drive_UI
             this.Controls.Add(this.pb_connect);
             this.Controls.Add(this.lv_Device_List);
             this.Controls.Add(this.pb_Refresh_List);
+            this.Controls.Add(this.p_BatteryPanel);
             this.Name = "mw_form";
             this.Text = "Mainwindow";
             this.Load += new System.EventHandler(this.mw_form_Load);
@@ -298,6 +321,8 @@ namespace BLE_Drive_UI
         private System.Windows.Forms.Button b_recalibrate;
         private System.Windows.Forms.DataVisualization.Charting.Chart ch_dataPlot;
         private System.Windows.Forms.CheckBox cb_plotAcc;
+        private System.Windows.Forms.Panel p_BatteryPanel;
+        private System.Windows.Forms.Label l_batteryLabel;
     }
 }
 

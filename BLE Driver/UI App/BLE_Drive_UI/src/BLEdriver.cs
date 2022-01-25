@@ -27,7 +27,7 @@ namespace BLE_Drive_UI.src
 
         public bool Connected;
         public bool _busy;
-        public UInt16 BatteryLevel;
+        public int BatteryLevel = 0;
 
         private static UInt16 _packetsize = 22;
         private static UInt16 _datapoints = 6;              //to Plot
@@ -40,8 +40,11 @@ namespace BLE_Drive_UI.src
         public event EventHandler<changeLabelEventArgs> ChangeLabel;
         public event EventHandler<imuDataEventArgs> UpdateChart;
         public event EventHandler SelectedDeviceFound;
+        public event EventHandler<bool> ConnectedChanged;
+        //public event Action<int> UpdateBatteryInfo;
 
         private object m_DataLock = new object();
+        public object m_DataLockBatt = new object();
 
         private IPHostEntry _host;
         private IPAddress _ipAddress;
@@ -70,7 +73,7 @@ namespace BLE_Drive_UI.src
             calibration = new string[] {"0","0","0","0"};
             dataToPlot = new float[_datapoints];
 
-            UpdateMainwindowTimer.Elapsed += new ElapsedEventHandler(UpdateMainwindow);
+            UpdateMainwindowTimer.Elapsed += new ElapsedEventHandler(OnUpdateMainwindowLabels);
             UpdateMainwindowTimer.Interval = 50;
             UpdateMainwindowTimer.Enabled = true;
             UpdateMainwindowTimer.Start();
@@ -344,8 +347,12 @@ namespace BLE_Drive_UI.src
             if (_deviceInformation.BatteryCharacteristic == null || _deviceInformation.BLEuartCharacteristic == null) { return; }
             if (sender.Service.AttributeHandle == _deviceInformation.BatteryCharacteristic.Service.AttributeHandle)
             {
-                BatteryLevel = reader.ReadByte();
-                Console.WriteLine(BatteryLevel);
+                lock(m_DataLockBatt)
+                {
+                    BatteryLevel = reader.ReadByte();
+                }
+                //UpdateBatteryInfo(BatteryLevel);
+                //Console.WriteLine(BatteryLevel);
             }
             if(sender.Service.AttributeHandle == _deviceInformation.BLEuartCharacteristic.Service.AttributeHandle)
             {
@@ -475,6 +482,12 @@ namespace BLE_Drive_UI.src
                 for (int i = 0; i < 4; i++)
                     calibration[i] = "0";
             }
+            EventHandler<bool> handler = ConnectedChanged;
+            if (handler != null)
+            {
+                handler(this, Connected);
+            }
+
         }
 
         protected virtual void OnStatusChanged(String status)
@@ -489,6 +502,8 @@ namespace BLE_Drive_UI.src
                 handler(this, e);
             }
         }
+
+        //protected virtual void OnConnectedChanged()
 
         protected virtual void OnChangeLabel(String label, String value)
         {
@@ -527,8 +542,7 @@ namespace BLE_Drive_UI.src
             }
         }
 
-
-        private void UpdateMainwindow(object source, ElapsedEventArgs e)
+        protected virtual void OnUpdateMainwindowLabels(object source, ElapsedEventArgs e)
         {
             //Debug.WriteLine("Update");
             for (int i = 0; i < 4 ; i++)
