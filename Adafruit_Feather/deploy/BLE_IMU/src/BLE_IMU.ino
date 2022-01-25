@@ -12,6 +12,9 @@
 
 #define FILENAME    "CalibrationValues.bin"
 
+#define VBATPIN A6
+   
+
 BLEUart bleuart;
 BLEBas blebas;
 
@@ -284,9 +287,9 @@ int num = 0;
 void SendData(TimerHandle_t handle)
 { 
   num++;
-  if (num >= 5000)
+  if (num >= 500)
   {
-    blebas.notify(100);
+    blebas.notify(get_battery_percent());
     num = 0;
   }
   bleuart.write(sendBuffer,22);
@@ -357,6 +360,57 @@ bool save_calibration()
     printTreeDir("/", 0);
     return false;
   }
+}
+
+uint8_t get_battery_percent()
+{
+  float measuredvbat = analogRead(VBATPIN);
+  measuredvbat *= 2;    // we divided by 2, so multiply back
+  measuredvbat *= 3.7;  // Multiply by 3.3V, our reference voltage
+  measuredvbat /= 1024; // convert to voltage
+
+  if (measuredvbat >= 4.2)
+    return 100;
+  else if (measuredvbat >= 4.15) 
+    return 95;
+  else if (measuredvbat >= 4.11) 
+    return 90;
+  else if (measuredvbat >= 4.08) 
+    return 85;
+  else if (measuredvbat >= 4.02) 
+    return 80;
+  else if (measuredvbat >= 3.98) 
+    return 75;
+  else if (measuredvbat >= 3.95) 
+    return 70;
+  else if (measuredvbat >= 3.91) 
+    return 65;
+  else if (measuredvbat >= 3.87) 
+    return 60;
+  else if (measuredvbat >= 3.85) 
+    return 55;
+  else if (measuredvbat >= 3.84) 
+    return 50;
+  else if (measuredvbat >= 3.82) 
+    return 45;
+  else if (measuredvbat >= 3.8) 
+    return 40;
+  else if (measuredvbat >= 3.79) 
+    return 35;
+  else if (measuredvbat >= 3.77) 
+    return 30;
+  else if (measuredvbat >= 3.75) 
+    return 25;
+  else if (measuredvbat >= 3.73) 
+    return 20;
+  else if (measuredvbat >= 3.71) 
+    return 15;
+  else if (measuredvbat >= 3.69) 
+    return 10;
+  else if (measuredvbat >= 3.61) 
+    return 5;
+  else if (measuredvbat >= 3.27) 
+    return 0;
 }
 
 
