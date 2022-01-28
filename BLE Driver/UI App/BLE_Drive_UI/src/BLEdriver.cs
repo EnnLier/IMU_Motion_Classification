@@ -179,6 +179,7 @@ namespace BLE_Drive_UI.src
                 catch (Exception e)
                 {
                     Console.WriteLine("Sending 'Close' command via TCP connection not possible");
+                    Console.WriteLine(e.Message);
                 } 
                 _sender.Shutdown(SocketShutdown.Both);
                 _sender.Close();
