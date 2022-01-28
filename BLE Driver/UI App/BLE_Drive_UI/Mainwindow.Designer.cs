@@ -104,7 +104,7 @@ namespace BLE_Drive_UI
             this.pb_connect.Name = "pb_connect";
             this.pb_connect.Size = new System.Drawing.Size(97, 30);
             this.pb_connect.TabIndex = 2;
-            this.pb_connect.Text = "Connect BT";
+            this.pb_connect.Text = "Connect";
             this.pb_connect.UseVisualStyleBackColor = true;
             this.pb_connect.Click += new System.EventHandler(this.pb_connect_Click);
             // 

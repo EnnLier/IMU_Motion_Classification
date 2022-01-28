@@ -21,12 +21,13 @@ namespace BLE_Drive_UI.src
     {
         private BluetoothLEDevice _BLEDevice;
         public BLEdevice _deviceInformation { get; set; } 
+
         public bool isPlotting { get; set;}
         public bool isStreaming { get; set; }
         public bool isSaving; 
 
         public bool Connected;
-        public bool _busy;
+        public bool Busy;
         public int BatteryLevel = 0;
 
         private static UInt16 _packetsize = 22;
@@ -245,7 +246,7 @@ namespace BLE_Drive_UI.src
 
         public async void ConnectDevice(BLEdevice deviceInformation)
         {
-            _busy = true;
+            Busy = true;
             _deviceInformation = deviceInformation;
             OnStatusChanged("Initializing");
             try
@@ -337,9 +338,27 @@ namespace BLE_Drive_UI.src
                     Console.WriteLine("Services not found: " + e.ToString());
                 }
             }
+            Busy = false;
 
         }
 
+        public void Disconnect()
+        {
+            try
+            {
+                OnStatusChanged("Disconnecting...");
+                WriteToBLEDevice("Disconnect");
+            }
+            catch (System.UnauthorizedAccessException e)
+            {
+                Console.WriteLine("Error Writing to BLE Device: ");
+                Console.WriteLine(e.Message);
+                Console.WriteLine("Retrying...");
+                Thread.Sleep(300);
+                Disconnect();
+            }
+
+        }
 
         private void Characteristic_ValueChanged(GattCharacteristic sender, GattValueChangedEventArgs args)
         {
@@ -432,8 +451,16 @@ namespace BLE_Drive_UI.src
             writer.ByteOrder = ByteOrder.LittleEndian;
             writer.WriteString(data);
             //Debug.WriteLine(_deviceInformation.BLEuartCharacteristic_write.CharacteristicProperties);
-            
-            GattCommunicationStatus result = await _deviceInformation.BLEuartCharacteristic_write.WriteValueAsync(writer.DetachBuffer());
+            try
+            {
+                GattCommunicationStatus result = await _deviceInformation.BLEuartCharacteristic_write.WriteValueAsync(writer.DetachBuffer());
+            }
+            catch (System.UnauthorizedAccessException e)
+            {
+                Console.WriteLine("Error Writing to BLE Device: ");
+                Console.WriteLine(e.Message);
+                throw new System.UnauthorizedAccessException();
+            }
             //var result = await _deviceInformation.BLEuartCharacteristic.
             //GattWriteResult result = await _deviceInformation.BLEuartCharacteristic.WriteValueWithResultAsync(writer.DetachBuffer());
             //Debug.WriteLine(result.ProtocolError.ToString()); Debug.WriteLine(result.Status.ToString());

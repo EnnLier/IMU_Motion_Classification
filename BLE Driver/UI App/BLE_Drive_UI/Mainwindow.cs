@@ -47,7 +47,7 @@ namespace BLE_Drive_UI
 
             PlotDataTimer.Tick += new EventHandler(update_dataChart);
             PlotDataTimer.Interval = 20;
-            PlotDataTimer.Enabled = true;
+            PlotDataTimer.Enabled = false;
 
             UpdateBatteryTimer.Tick += new EventHandler(update_battery);
             UpdateBatteryTimer.Interval = 500;
@@ -57,14 +57,15 @@ namespace BLE_Drive_UI
 
         private void BLEDriver_ConnectedChanged(object sender, bool connected)
         {
-            
-
+            pb_connect.BeginInvoke((Action)(() => this.pb_connect.Enabled = true));
             if (connected)
             {
+                pb_connect.BeginInvoke((Action)(() => this.pb_connect.Text = "Disconnect"));
                 p_BatteryPanel.BeginInvoke((Action)(() => this.UpdateBatteryTimer.Start()));
             }
             else
             {
+                pb_connect.BeginInvoke((Action)(() => this.pb_connect.Text = "Connect"));
                 p_BatteryPanel.BeginInvoke((Action)(() => this.UpdateBatteryTimer.Stop()));
             }
         }
@@ -134,13 +135,21 @@ namespace BLE_Drive_UI
         {
             try
             {
-                var selectedDevice = (BLEdevice)this.lv_Device_List.SelectedItems[0].Tag;
-
-                if(_BLEdriver != null)
+                if(_BLEdriver.Busy) return;
+                if(pb_connect.Text == "Connect")
                 {
-                    _BLEdriver.ConnectDevice(selectedDevice);
-                }
+                    var selectedDevice = (BLEdevice)this.lv_Device_List.SelectedItems[0].Tag;
 
+                    if (_BLEdriver != null)
+                    {
+                        _BLEdriver.ConnectDevice(selectedDevice);
+                    }
+                }
+                else if(pb_connect.Text == "Disconnect")
+                {
+                    _BLEdriver.Disconnect();
+                }
+                pb_connect.Enabled = false;
             }
             catch(System.ArgumentOutOfRangeException)
             {
