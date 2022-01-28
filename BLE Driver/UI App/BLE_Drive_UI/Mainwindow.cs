@@ -159,12 +159,8 @@ namespace BLE_Drive_UI
 
         private void Form_ChangeLabel(object sender, changeLabelEventArgs e)
         {
-            //Debug.WriteLine("Name: " + e.label + "    Value: " + e.value);
             foreach (Control x in this.Controls)
             {
-                //var l = x.GetType();
-                //Debug.WriteLine("Name: " + x.Name + "    Value: " + e.value);
-                //Debug.WriteLine("Name: " + x.Name + "    label: " + e.label);
                 if (x.Name == e.label)
                 {
                     try
@@ -173,10 +169,7 @@ namespace BLE_Drive_UI
                     }
                     catch (System.InvalidOperationException)
                     {
-                        x.Invoke((Action)delegate
-                        {
-                            x.Text = e.value;
-                        });
+                        x.Invoke((Action)delegate{ x.Text = e.value; });
                     }
                 }
             }
@@ -223,12 +216,12 @@ namespace BLE_Drive_UI
         {
             if (this.cb_StreamTCP.Checked)
             { 
-                _BLEdriver.StartClient();
+                _BLEdriver.StartTCPClient();
                 _BLEdriver.isStreaming = true;
             } 
             else
             {
-                _BLEdriver.CloseClient();
+                _BLEdriver.CloseTCPClient();
                 _BLEdriver.isStreaming = false;
             }
         }

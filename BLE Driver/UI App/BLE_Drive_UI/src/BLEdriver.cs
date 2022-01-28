@@ -113,7 +113,7 @@ namespace BLE_Drive_UI.src
             }
         }
 
-        public void StartClient()
+        public void StartTCPClient()
         {
             if(_sender != null) { return;}
             byte[] bytes = new byte[1024];
@@ -154,33 +154,47 @@ namespace BLE_Drive_UI.src
                 {
                     Console.WriteLine("ArgumentNullException : {0}", ane.ToString());
                     OnStatusChanged("TCP Client Connection Failed");
+                    _sender.Dispose();
+                    _sender = null;
                 }
                 catch (SocketException se)
                 {
                     Console.WriteLine("SocketException : {0}", se.ToString());
                     OnStatusChanged("TCP Client Connection Failed");
+                    _sender.Dispose();
+                    _sender = null;
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine("Unexpected exception : {0}", e.ToString());
                     OnStatusChanged("TCP Client Connection Failed");
+                    _sender.Dispose();
+                    _sender = null;
                 }
 
             }
             catch (Exception e)
             {
-
                 Console.WriteLine(e.ToString());
                 OnStatusChanged("TCP Client Connection Failed");
+                _sender.Dispose();
+                _sender = null;
             }
         }
 
-        public void CloseClient()
+        public void CloseTCPClient()
         {
             // Release the socket.    
             if (_sender != null)
-            { 
-                sendData(ToOutgoingPacket(new byte[]{ 0x04}, 1));
+            {
+                try
+                {
+                    sendDataTCP(ToOutgoingPacket(new byte[] { 0x04 }, 1));
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Sending 'Close' command via TCP connection not possible");
+                } 
                 _sender.Shutdown(SocketShutdown.Both);
                 _sender.Close();
                 _sender.Dispose();
@@ -194,7 +208,7 @@ namespace BLE_Drive_UI.src
             WriteToBLEDevice("Recalibrate");
         }
 
-        private void sendData(String data)
+        private void sendDataTCP(String data)
         {
             try
             {
@@ -211,7 +225,7 @@ namespace BLE_Drive_UI.src
             }
         }
 
-        private void sendData(Byte[] data)
+        private void sendDataTCP(Byte[] data)
         {
             try
             {
@@ -254,8 +268,8 @@ namespace BLE_Drive_UI.src
                 _BLEDevice = await BluetoothLEDevice.FromIdAsync(deviceInformation.Id);
 
                 _BLEDevice.ConnectionStatusChanged += ConnectionStatusChangedEvent;
-                _BLEDevice.GattServicesChanged += GattServicesChangedEvent;
-                _BLEDevice.NameChanged += NameChangedEvent;
+                //_BLEDevice.GattServicesChanged += GattServicesChangedEvent;
+                //_BLEDevice.NameChanged += NameChangedEvent;
 
             }
             catch(Exception e)
@@ -416,7 +430,7 @@ namespace BLE_Drive_UI.src
 
                 if (_sender != null)
                 {
-                    sendData(ToOutgoingPacket(data, _packetsize));
+                    sendDataTCP(ToOutgoingPacket(data, _packetsize));
                 }
                 if (isSaving)
                 {
@@ -489,15 +503,15 @@ namespace BLE_Drive_UI.src
             }
         }
 
-        private void NameChangedEvent(BluetoothLEDevice sender, object args)
-        {
-            Console.WriteLine("Name changed: " + sender.Name);
-        }
+        //private void NameChangedEvent(BluetoothLEDevice sender, object args)
+        //{
+        //    Console.WriteLine("Name changed: " + sender.Name);
+        //}
 
-        private void GattServicesChangedEvent(BluetoothLEDevice sender, object args)
-        {
+        //private void GattServicesChangedEvent(BluetoothLEDevice sender, object args)
+        //{
 
-        }
+        //}
 
         private void ConnectionStatusChangedEvent(BluetoothLEDevice sender, object args)
         {
