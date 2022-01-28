@@ -13,6 +13,8 @@
 #define FILENAME    "CalibrationValues.bin"
 
 #define VBATPIN A6
+#define CASE_LED_RED 6
+#define CASE_LED_GREEN 5
    
 
 BLEUart bleuart;
@@ -63,6 +65,11 @@ const String BNO_Error[11] = {
 void setup() 
 {
   Serial.begin(115200);
+
+  pinMode(CASE_LED_RED, OUTPUT);
+  pinMode(CASE_LED_GREEN, OUTPUT);
+  digitalWrite(CASE_LED_RED, HIGH);
+  digitalWrite(CASE_LED_GREEN, LOW);
 
   InternalFS.begin();
 
@@ -122,20 +129,23 @@ void setup()
 
   bno->setMode(Adafruit_BNO055::OPERATION_MODE_IMUPLUS);//adafruit_bno055_opmode_t mode);
 
+  
+  digitalWrite(CASE_LED_RED, LOW);
+  digitalWrite(CASE_LED_GREEN, HIGH);
 
-  Serial.println("Advertising");
   advertise();
 }
 
 void advertise()
 {
+  Serial.println("Advertising");
   Bluefruit.Advertising.addFlags(BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE);
   Bluefruit.Advertising.addTxPower();
   Bluefruit.Advertising.addService(bleuart);
   if(!Bluefruit.Advertising.addName())
    Bluefruit.ScanResponse.addName();
   
-  Bluefruit.Advertising.restartOnDisconnect(true);
+  Bluefruit.Advertising.restartOnDisconnect(false);
   Bluefruit.Advertising.setInterval(32, 244);
   Bluefruit.Advertising.setFastTimeout(20);
   Bluefruit.Advertising.start(0); 
@@ -144,22 +154,6 @@ void advertise()
 
 void onConnect(uint16_t conn_handle)
 {
-
-  // adafruit_bno055_offsets_t offs;
-  // bno->getSensorOffsets(offs);
-  // Serial.println("Current Offsets: ");
-  // print_calib(offs);
-
-  // delay(50);
-  // bno->getSensorOffsets(offs);
-  // // delay(50);
-  // Serial.println("New Offsets: ");
-  // // delay(50);
-  // print_calib(offs);
-  // delay(50);
-
-
-
   connection_handle  = conn_handle;
   // Get the reference to current connection
   BLEConnection* connection = Bluefruit.Connection(conn_handle);
@@ -171,9 +165,9 @@ void onConnect(uint16_t conn_handle)
   Serial.println(central_name);
 
   connected = true;
+  digitalWrite(CASE_LED_RED, HIGH);
 
-  // load_calibration();
-  // printTreeDir("/", 0);
+  blebas.notify(get_battery_percent());
 }
 
 void onDisconnect(uint16_t conn_handle, uint8_t reason)
@@ -186,9 +180,14 @@ void onDisconnect(uint16_t conn_handle, uint8_t reason)
 
   delay(10);
   digitalWrite(LED_RED,0);
+  connected = false;
+  digitalWrite(CASE_LED_RED, LOW);
 
   Serial.println();
   Serial.print("Disconnected, reason = 0x"); Serial.println(reason, HEX);
+
+  delay(2000);
+  advertise();
 }
 
 char sendBuffer[22] = {'A','0','0','0','1','0','1','2','0','0','1','0','1','2','0','0','1','0','1','2'};
@@ -278,7 +277,10 @@ void bleuart_rx_callback(uint16_t conn_hdl)
   {
     Serial.println("Recalibrate!");
     isCalibrated = false;
-    // Serial.println("Restart Device!");
+  }
+  if (str.substring(0,10).compareTo("Disconnect") == 0)
+  {
+    Bluefruit.disconnect(connection_handle);
   }
 }
 
@@ -294,6 +296,7 @@ void SendData(TimerHandle_t handle)
   }
   bleuart.write(sendBuffer,22);
   digitalToggle(LED_RED);
+  digitalToggle(CASE_LED_RED);
 }
 
 
