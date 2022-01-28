@@ -150,28 +150,13 @@ namespace BLE_Drive_UI.src
                     OnStatusChanged("TCP Client Connected");
 
                 }
-                catch (ArgumentNullException ane)
-                {
-                    Console.WriteLine("ArgumentNullException : {0}", ane.ToString());
-                    OnStatusChanged("TCP Client Connection Failed");
-                    _sender.Dispose();
-                    _sender = null;
-                }
-                catch (SocketException se)
-                {
-                    Console.WriteLine("SocketException : {0}", se.ToString());
-                    OnStatusChanged("TCP Client Connection Failed");
-                    _sender.Dispose();
-                    _sender = null;
-                }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Unexpected exception : {0}", e.ToString());
+                    Console.WriteLine("TXP Client Exception: {0}", e.ToString());
                     OnStatusChanged("TCP Client Connection Failed");
                     _sender.Dispose();
                     _sender = null;
                 }
-
             }
             catch (Exception e)
             {
