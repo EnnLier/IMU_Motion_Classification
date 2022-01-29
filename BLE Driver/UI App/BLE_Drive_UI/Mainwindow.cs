@@ -21,7 +21,7 @@ namespace BLE_Drive_UI
         private BLEwatcher _BLEwatcher;
         private BLEdriver _BLEdriver;
 
-        private static int _maxNumOfChartValues = 300;
+        private static int _maxNumOfChartValues = 200;
         private int _currentChartValue = 0;
 
         private object m_chartLock = new object();
@@ -29,6 +29,11 @@ namespace BLE_Drive_UI
         //private Thread DataPlotThread;
         private System.Windows.Forms.Timer PlotDataTimer = new System.Windows.Forms.Timer();
         private System.Windows.Forms.Timer UpdateBatteryTimer = new System.Windows.Forms.Timer();
+
+        //private System.Threading.Thread PlotDataThread;
+        //private BackgroundWorker PlotDataBackgroundWorker;
+
+        private bool _plotting = false;
 
         public mw_form()
         {
@@ -46,8 +51,10 @@ namespace BLE_Drive_UI
             p_BatteryPanel.Enabled = false;
 
             PlotDataTimer.Tick += new EventHandler(update_dataChart);
-            PlotDataTimer.Interval = 20;
+            PlotDataTimer.Interval = 25;
             PlotDataTimer.Enabled = false;
+
+
 
             UpdateBatteryTimer.Tick += new EventHandler(update_battery);
             UpdateBatteryTimer.Interval = 500;
@@ -57,7 +64,23 @@ namespace BLE_Drive_UI
 
         private void BLEDriver_ConnectedChanged(object sender, bool connected)
         {
-            pb_connect.BeginInvoke((Action)(() => this.pb_connect.Enabled = true));
+            if (b_recalibrate.InvokeRequired)
+            {
+                b_recalibrate.Invoke((Action)(() => this.b_recalibrate.Enabled = connected ? true : false));
+                cb_plotAcc.Invoke((Action)(() => this.cb_plotAcc.Enabled = connected ? true : false));
+                p_BatteryPanel.Invoke((Action)(() => this.p_BatteryPanel.Enabled = connected ? true : false));
+                cb_SaveToFile.Invoke((Action)(() => this.cb_SaveToFile.Enabled = connected ? true : false));
+                cb_StreamTCP.Invoke((Action)(() => this.cb_StreamTCP.Enabled = connected ? true : false));
+            }
+            else
+            {
+                this.b_recalibrate.Enabled = connected ? true : false;
+                this.cb_plotAcc.Enabled = connected ? true : false;
+                this.p_BatteryPanel.Enabled = connected ? true : false;
+                this.cb_SaveToFile.Enabled = connected ? true : false;
+                this.cb_StreamTCP.Enabled = connected ? true : false;
+            }
+
             if (connected)
             {
                 pb_connect.BeginInvoke((Action)(() => this.pb_connect.Text = "Disconnect"));
@@ -88,25 +111,7 @@ namespace BLE_Drive_UI
             {
                 p_BatteryPanel.BackColor = Color.FromArgb(0, 127, 0);
             }
-            //try
-            //{
-
-            //    Console.WriteLine("Clean");
-            //}
-            //catch (System.InvalidOperationException)
-            //{
-
-            //    cb_StreamTCP.Invoke((Action)delegate
-            //    {
-            //        bar_BatteryBar.Value = level;
-            //    });
-            //}
-            //catch (Exception e)
-            //{
-            //    Console.WriteLine("New Exception on battery update");
-            //    Console.WriteLine(e.Message);
-            //    bar_BatteryBar.Value = level;
-            //}
+            
         }
 
         private void Mainwindow_Load(object sender, EventArgs e)
@@ -149,7 +154,7 @@ namespace BLE_Drive_UI
                 {
                     _BLEdriver.Disconnect();
                 }
-                pb_connect.Enabled = false;
+                //pb_connect.Enabled = false;
             }
             catch(System.ArgumentOutOfRangeException)
             {
@@ -163,14 +168,10 @@ namespace BLE_Drive_UI
             {
                 if (x.Name == e.label)
                 {
-                    try
-                    {
+                    if(x.InvokeRequired)
+                        x.Invoke((Action)delegate { x.Text = e.value; });
+                    else
                         x.Text = e.value;
-                    }
-                    catch (System.InvalidOperationException)
-                    {
-                        x.Invoke((Action)delegate{ x.Text = e.value; });
-                    }
                 }
             }
         }
@@ -182,34 +183,25 @@ namespace BLE_Drive_UI
             //{
             //    cb_plotAcc.Checked = false;
             //}
-            try
-            {
+            if (l_Driver_Status.InvokeRequired)
+                l_Driver_Status.Invoke((Action)delegate { this.l_Driver_Status.Text = timestamp + "      " + e.Status; });
+            else
                 this.l_Driver_Status.Text = timestamp + "      " + e.Status;
-                this.cb_StreamTCP.Enabled = _BLEdriver.Connected == true ? true : false;
-                this.cb_SaveToFile.Enabled = _BLEdriver.Connected == true ? true : false;
-                this.cb_plotAcc.Enabled = _BLEdriver.Connected == true ? true : false;
-                this.b_recalibrate.Enabled = _BLEdriver.Connected == true ? true : false;
-                this.p_BatteryPanel.Enabled = _BLEdriver.Connected == true ? true : false;
-            }
-            catch(System.InvalidOperationException)
-            {
-                l_Driver_Status.Invoke((Action)delegate
-                {
-                    this.l_Driver_Status.Text = timestamp + "      " + e.Status;
-                });
-                cb_StreamTCP.Invoke((Action)delegate
-                {
-                    this.cb_StreamTCP.Enabled = _BLEdriver.Connected == true ? true : false;
-                    this.cb_SaveToFile.Enabled = _BLEdriver.Connected == true ? true : false;
-                    this.cb_plotAcc.Enabled = _BLEdriver.Connected == true ? true : false;
-                    this.b_recalibrate.Enabled = _BLEdriver.Connected == true ? true : false;
-                    this.p_BatteryPanel.Enabled = _BLEdriver.Connected == true ? true : false;
+            //catch(System.InvalidOperationException)
+            //{
+                
+            //    //cb_StreamTCP.Invoke((Action)delegate
+            //    //{
+            //    //    this.cb_StreamTCP.Enabled = _BLEdriver.Connected == true ? true : false;
+            //    //    this.cb_SaveToFile.Enabled = _BLEdriver.Connected == true ? true : false;
+            //    //    this.cb_plotAcc.Enabled = _BLEdriver.Connected == true ? true : false;
+            //    //    this.b_recalibrate.Enabled = _BLEdriver.Connected == true ? true : false;
+            //    //    this.p_BatteryPanel.Enabled = _BLEdriver.Connected == true ? true : false;
 
-                });
-            }
+            //    //});
+            //}
             
         }
-
 
 
         private void cb_StreamTCP_CheckedChanged(object sender, EventArgs e)
@@ -237,17 +229,29 @@ namespace BLE_Drive_UI
                 ch_dataPlot.Series[3].Points.Clear();
                 ch_dataPlot.Series[4].Points.Clear();
                 ch_dataPlot.Series[5].Points.Clear();
+
+                //_plotting = true;
+                //PlotDataBackgroundWorker = new BackgroundWorker();
+                //PlotDataBackgroundWorker.DoWork += PlotData;
+                //PlotDataBackgroundWorker.ProgressChanged += PlotData_ProgressChanged;
+                //PlotDataBackgroundWorker.WorkerReportsProgress = true;
+                //PlotDataBackgroundWorker.WorkerSupportsCancellation = true;
+                //PlotDataBackgroundWorker.RunWorkerAsync();
+
                 PlotDataTimer.Enabled = true;
                 this.PlotDataTimer.Start();
-                //_BLEdriver.isPlotting = true;
+                //watch.Start();
             }
             else
             {
-                //_BLEdriver.isPlotting = false;
+                //_plotting = false;
+                //PlotDataBackgroundWorker.CancelAsync();
                 PlotDataTimer.Enabled = false;
                 this.PlotDataTimer.Stop();
+
             }
         }
+
 
         private void cb_SaveToFile_CheckedChanged(object sender, EventArgs e)
         {
@@ -415,34 +419,80 @@ namespace BLE_Drive_UI
             ch_dataPlot.Series[5].BorderWidth = 2;
         }
 
+        //private void PlotData_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        //{
+        //    var data = _BLEdriver.GetDataToPlot();
+        //    ch_dataPlot.Series[0].Points.AddXY(_currentChartValue, data[0]);
+        //    ch_dataPlot.Series[1].Points.AddXY(_currentChartValue, data[1]);
+        //    ch_dataPlot.Series[2].Points.AddXY(_currentChartValue, data[2]);
+        //    ch_dataPlot.Series[3].Points.AddXY(_currentChartValue, data[3]);
+        //    ch_dataPlot.Series[4].Points.AddXY(_currentChartValue, data[4]);
+        //    ch_dataPlot.Series[5].Points.AddXY(_currentChartValue, data[5]);
+        //    _currentChartValue++;
+        //    if (_currentChartValue >= _maxNumOfChartValues)
+        //    {
+        //        _currentChartValue = 0;
+        //        ch_dataPlot.Series[0].Points.Clear();
+        //        ch_dataPlot.Series[1].Points.Clear();
+        //        ch_dataPlot.Series[2].Points.Clear();
+        //        ch_dataPlot.Series[3].Points.Clear();
+        //        ch_dataPlot.Series[4].Points.Clear();
+        //        ch_dataPlot.Series[5].Points.Clear();
+        //    }
+        //}
+
+        //private void PlotData(object sender, DoWorkEventArgs e)
+        //{
+        //    Console.WriteLine("Thread Started");
+        //    Stopwatch PlotTickWatch = new Stopwatch();
+        //    PlotTickWatch.Start();
+        //    //this.ch_dataPlot.BeginInvoke((Action)delegate
+        //    //{
+        //        while (_plotting)
+        //        {
+        //            PlotDataBackgroundWorker.ReportProgress(0);
+        //            while(PlotTickWatch.Elapsed.TotalMilliseconds <= 10)
+        //            {
+        //                Thread.Sleep(1);
+        //            }
+        //            PlotTickWatch.Restart();
+        //        }
+        //    //});
+        //}
+
+        //Stopwatch watch = new Stopwatch();
         private void update_dataChart(object sender, System.EventArgs e)
         {
-            var data = _BLEdriver.GetDataToPlot();
-            if(!_BLEdriver.Connected) return;
+            //Console.WriteLine(watch.ElapsedMilliseconds);
+            //watch.Restart();
+            //if(!_BLEdriver.Connected) return;
+
             lock (m_chartLock)
             {
-                ch_dataPlot.Invoke((Action)delegate
+                //ch_dataPlot.Invoke((Action)delegate
+                //{var data = _BLEdriver.GetDataToPlot();
+                var data = _BLEdriver.GetDataToPlot();
+                ch_dataPlot.Series[0].Points.AddXY(_currentChartValue, data[0]);
+                ch_dataPlot.Series[1].Points.AddXY(_currentChartValue, data[1]);
+                ch_dataPlot.Series[2].Points.AddXY(_currentChartValue, data[2]);
+                ch_dataPlot.Series[3].Points.AddXY(_currentChartValue, data[3]);
+                ch_dataPlot.Series[4].Points.AddXY(_currentChartValue, data[4]);
+                ch_dataPlot.Series[5].Points.AddXY(_currentChartValue, data[5]);
+                _currentChartValue++;
+                if (_currentChartValue >= _maxNumOfChartValues)
                 {
-                    ch_dataPlot.Series[0].Points.AddXY(_currentChartValue, data[0]);
-                    ch_dataPlot.Series[1].Points.AddXY(_currentChartValue, data[1]);
-                    ch_dataPlot.Series[2].Points.AddXY(_currentChartValue, data[2]);
-                    ch_dataPlot.Series[3].Points.AddXY(_currentChartValue, data[3]);
-                    ch_dataPlot.Series[4].Points.AddXY(_currentChartValue, data[4]);
-                    ch_dataPlot.Series[5].Points.AddXY(_currentChartValue, data[5]);
-                    _currentChartValue++;
-                    if (_currentChartValue >= _maxNumOfChartValues)
-                    {
-                        _currentChartValue = 0;
-                        ch_dataPlot.Series[0].Points.Clear();
-                        ch_dataPlot.Series[1].Points.Clear();
-                        ch_dataPlot.Series[2].Points.Clear();
-                        ch_dataPlot.Series[3].Points.Clear();
-                        ch_dataPlot.Series[4].Points.Clear();
-                        ch_dataPlot.Series[5].Points.Clear();
-                    }
-                });
+                    _currentChartValue = 0;
+                    ch_dataPlot.Series[0].Points.Clear();
+                    ch_dataPlot.Series[1].Points.Clear();
+                    ch_dataPlot.Series[2].Points.Clear();
+                    ch_dataPlot.Series[3].Points.Clear();
+                    ch_dataPlot.Series[4].Points.Clear();
+                    ch_dataPlot.Series[5].Points.Clear();
+                }
+                //});
             }
-
+            //Console.WriteLine(watch.ElapsedMilliseconds);
+            //watch.Restart();
         }
 
 
