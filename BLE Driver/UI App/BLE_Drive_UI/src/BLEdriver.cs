@@ -22,7 +22,6 @@ namespace BLE_Drive_UI.src
         private BluetoothLEDevice _BLEDevice;
         public BLEdevice _deviceInformation { get; set; } 
 
-        public bool isPlotting { get; set;}
         public bool isStreaming { get; set; }
         public bool isSaving; 
 
@@ -84,7 +83,7 @@ namespace BLE_Drive_UI.src
         ~BLEdriver()
         {
             if(isSaving)
-                flushBuffer();
+                stopSaving();
         }
 
         public float[] GetDataToPlot()
@@ -455,7 +454,7 @@ namespace BLE_Drive_UI.src
             {
                 GattCommunicationStatus result = await _deviceInformation.BLEuartCharacteristic_write.WriteValueAsync(writer.DetachBuffer());
             }
-            catch (System.UnauthorizedAccessException e)
+            catch (System.Exception e)
             {
                 Console.WriteLine("Error Writing to BLE Device: ");
                 Console.WriteLine(e.Message);
@@ -476,18 +475,6 @@ namespace BLE_Drive_UI.src
             return Encoding.Default.GetString(new Byte[] { 0x55 });
         }
 
-        public bool flushBuffer()
-        {
-            try
-            {
-                _dataSaver.stop();
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
 
         //private void NameChangedEvent(BluetoothLEDevice sender, object args)
         //{
@@ -501,14 +488,16 @@ namespace BLE_Drive_UI.src
 
         private void ConnectionStatusChangedEvent(BluetoothLEDevice sender, object args)
         {
-            Console.WriteLine("Connection Status changed: " + sender.ConnectionStatus);
-            Connected = sender.ConnectionStatus.ToString() == "Connected" ? true : false;
+            Connected = sender.ConnectionStatus == BluetoothConnectionStatus.Connected ? true : false;
             OnStatusChanged(sender.ConnectionStatus.ToString());
             if(!Connected)
             {
+                stopSaving();
+                CloseTCPClient();
                 for (int i = 0; i < 4; i++)
                     calibration[i] = "0";
             }
+
             EventHandler<bool> handler = ConnectedChanged;
             if (handler != null)
             {
@@ -615,14 +604,14 @@ namespace BLE_Drive_UI.src
 
             SBuffer = new String[_bufferLength];
 
-            Count = 1;
+            Count = 0;
         }
 
         public void Add(String data)
         {
             if(Count <= _bufferLength)
             {
-                SBuffer[Count-1] = data;
+                SBuffer[Count] = data;
                 Count++;
             }
             else
@@ -717,10 +706,10 @@ namespace BLE_Drive_UI.src
             cummulativeRate = 0;
 
             Buffer1PollingThread = new Thread(Buffer1Polling);
-            Buffer2PollingThread = new Thread(Buffer2Polling);
+            //Buffer2PollingThread = new Thread(Buffer2Polling);
 
             Buffer1PollingThread.Start();
-            Buffer2PollingThread.Start();
+            //Buffer2PollingThread.Start();
 
 
 
@@ -748,11 +737,11 @@ namespace BLE_Drive_UI.src
 
         private void Buffer1Polling()
         {
-            while (dataToSave == String.Empty) {Thread.Sleep(5); }
+            while (dataToSave == String.Empty) { Thread.Sleep(1); }
             Watch.Start();
             while (isSaving)
             {
-                if (!buffer1.Active) { var n = _rate / 5; Thread.Sleep((int)n); continue; }
+                //if (!buffer1.Active) { var n = _rate / 5; Thread.Sleep((int)n); continue; }
                 double t = Watch.Elapsed.TotalMilliseconds;
                 if (t >= cummulativeRate)
                 {
@@ -761,12 +750,15 @@ namespace BLE_Drive_UI.src
                     lock (mThreadLock)
                     {
                         buffer1.Add(timestamp + dataToSave);
-                    } 
+                    }
                     if (buffer1.Count >= _bufferLength)
                     {
                         buffer1.Active = false;
                         buffer2.Active = true;
+                        Buffer2PollingThread = new Thread(Buffer2Polling);
+                        Buffer2PollingThread.Start();
                         save(buffer1);
+                        return;
                     }
                 }
             }
@@ -776,7 +768,7 @@ namespace BLE_Drive_UI.src
         {
             while (isSaving)
             {
-                if (!buffer2.Active) { var n = _rate / 5; Thread.Sleep((int)n); continue; }
+                //if (!buffer2.Active){ var n = _rate / 5; Thread.Sleep((int)n); continue; }
                 double t = Watch.Elapsed.TotalMilliseconds;
                 if (t >= cummulativeRate)
                 {
@@ -790,7 +782,10 @@ namespace BLE_Drive_UI.src
                     {
                         buffer1.Active = true;
                         buffer2.Active = false;
+                        Buffer1PollingThread = new Thread(Buffer1Polling);
+                        Buffer1PollingThread.Start();
                         save(buffer2);
+                        return;
                     }
                 }
             }
@@ -846,18 +841,6 @@ namespace BLE_Drive_UI.src
             String filename = DateTime.Now.ToString("yyyy_MM_dd_HH_mm_ss");
             File.WriteAllLines(_path + filename + ".txt", buffer.Flush());
             busy = false;
-            //if (i == 1)
-            //{
-            //    File.WriteAllLines(_path + filename + ".txt", buffer1.Flush());
-            //}
-            //else if (i == 2)
-            //{
-            //    File.WriteAllLines(_path + filename + ".txt", buffer2.Flush());
-            //}
-            //else
-            //{
-            //    throw new Exception("No Buffer active in data saving Class Save function");
-            //}
         }
 
         private void flush()
