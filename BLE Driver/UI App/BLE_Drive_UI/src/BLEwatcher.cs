@@ -12,13 +12,13 @@ namespace BLE_Drive_UI.src
 {
     class BLEwatcher
     {
-
-
         public BLEwatcher()
         {
             // Query for extra properties you want returned
             //string[] requestedProperties = { "System.Devices.Aep.DeviceAddress", "System.Devices.Aep.IsConnected" };
-            string[] requestedProperties = {};
+            string[] requestedProperties = {"System.Devices.Aep.Bluetooth.Le.IsConnectable","System.Devices.Aep.IsPresent" };
+
+
             deviceWatcher =
                         DeviceInformation.CreateWatcher(
                                 BluetoothLEDevice.GetDeviceSelectorFromPairingState(false),
@@ -60,22 +60,34 @@ namespace BLE_Drive_UI.src
         private void DeviceWatcher_Removed(DeviceWatcher sender, DeviceInformationUpdate args)
         {
             //Console.WriteLine("DeviceWatcher_Removed");
+            //Console.WriteLine(args.Id);
+            lock (mListLock)
+            {
+                foreach (BLEdevice dev in deviceList)
+                {
+                    if (args.Id.Equals(dev.Id))
+                    {
+                        deviceList.Remove(dev);
+                        return;
+                    }
+                }
+            }
             //throw new NotImplementedException("DeviceWatcher_Removed");
         }
 
         private void DeviceWatcher_Updated(DeviceWatcher sender, DeviceInformationUpdate args)
         {
-            Console.WriteLine("Updated...");
-            Console.WriteLine(args.Id);
+            
+            //Console.WriteLine("Updated...");
+            //Console.WriteLine(args.Id);
         }
 
         private void DeviceWatcher_Added(DeviceWatcher sender, DeviceInformation args)
         {
-            
-            //Console.WriteLine(args.Name);
-            //Console.WriteLine(args.Id);
-            //Console.WriteLine(args.Pairing.CanPair);
-
+            if ((bool)args.Properties["System.Devices.Aep.IsPresent"] == false)
+            {
+                return;
+            }
             BLEdevice device = new BLEdevice(args.Name, args.Id, args.Pairing.CanPair);
             //bool update = false;
             lock(mListLock)
