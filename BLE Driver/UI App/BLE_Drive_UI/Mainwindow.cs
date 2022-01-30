@@ -33,7 +33,6 @@ namespace BLE_Drive_UI
         //private System.Threading.Thread PlotDataThread;
         //private BackgroundWorker PlotDataBackgroundWorker;
 
-        private bool _plotting = false;
 
         public mw_form()
         {
@@ -208,13 +207,11 @@ namespace BLE_Drive_UI
         {
             if (this.cb_StreamTCP.Checked)
             { 
-                _BLEdriver.StartTCPClient();
-                _BLEdriver.isStreaming = true;
+                _BLEdriver.StartStreaming();
             } 
             else
             {
-                _BLEdriver.CloseTCPClient();
-                _BLEdriver.isStreaming = false;
+                _BLEdriver.StopStreaming();
             }
         }
 
@@ -257,18 +254,18 @@ namespace BLE_Drive_UI
         {
             if (this.cb_SaveToFile.Checked)
             {
-                _BLEdriver.startSaving();
+                _BLEdriver.StartSaving();
             }
             else
             {
-                _BLEdriver.stopSaving();
+                _BLEdriver.StopSaving();
             }
         }
 
 
         private void b_recalibrate_Click(object sender, EventArgs e)
         {
-            _BLEdriver.recalibrate_imu();
+            _BLEdriver.Recalibrate_imu();
         }
 
         private void mw_form_Load(object sender, EventArgs e)
