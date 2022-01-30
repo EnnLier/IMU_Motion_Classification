@@ -22,11 +22,11 @@ namespace BLE_Drive_UI.Domain
         public float Gyrz { get; set; }
     }
 
-    public class changeLabelEventArgs : EventArgs
-    {
-        public String label { get; set; }
-        public String value { get; set; }
-    }
+    //public class changeLabelEventArgs : EventArgs
+    //{
+    //    public String label { get; set; }
+    //    public String value { get; set; }
+    //}
 
     public class tcpConnectEventArgs : EventArgs
     {

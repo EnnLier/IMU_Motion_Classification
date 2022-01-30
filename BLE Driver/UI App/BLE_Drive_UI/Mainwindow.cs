@@ -29,7 +29,7 @@ namespace BLE_Drive_UI
         //private Thread DataPlotThread;
         private System.Windows.Forms.Timer PlotDataTimer = new System.Windows.Forms.Timer();
         private System.Windows.Forms.Timer UpdateBatteryTimer = new System.Windows.Forms.Timer();
-
+        private System.Windows.Forms.Timer UpdateCalibrationLabelTimer = new System.Windows.Forms.Timer();
         //private System.Threading.Thread PlotDataThread;
         //private BackgroundWorker PlotDataBackgroundWorker;
 
@@ -40,7 +40,7 @@ namespace BLE_Drive_UI
             _BLEdriver = new BLEdriver();
             _BLEdriver.StatusChanged += BLEdriver_StatusChanged;
             _BLEdriver.ConnectedChanged += BLEDriver_ConnectedChanged;
-            _BLEdriver.ChangeLabel += Form_ChangeLabel;
+            //_BLEdriver.ChangeLabel += Form_ChangeLabel;
             InitializeComponent();
 
             cb_SaveToFile.Enabled = false;
@@ -53,42 +53,56 @@ namespace BLE_Drive_UI
             PlotDataTimer.Interval = 25;
             PlotDataTimer.Enabled = false;
 
-
-
             UpdateBatteryTimer.Tick += new EventHandler(update_battery);
             UpdateBatteryTimer.Interval = 500;
+            //UpdateBatteryTimer.Enabled = false;
+
+            UpdateCalibrationLabelTimer.Tick += new EventHandler(update_calibLabel);
+            UpdateCalibrationLabelTimer.Interval = 500;
+            //UpdateCalibrationLabelTimer.Enabled = false;
 
             initialize_dataChart();
         }
 
+
         private void BLEDriver_ConnectedChanged(object sender, bool connected)
-        {
-            if (b_recalibrate.InvokeRequired)
-            {
-                b_recalibrate.Invoke((Action)(() => this.b_recalibrate.Enabled = connected ? true : false));
-                cb_plotAcc.Invoke((Action)(() => this.cb_plotAcc.Enabled = connected ? true : false));
-                p_BatteryPanel.Invoke((Action)(() => this.p_BatteryPanel.Enabled = connected ? true : false));
-                cb_SaveToFile.Invoke((Action)(() => this.cb_SaveToFile.Enabled = connected ? true : false));
-                cb_StreamTCP.Invoke((Action)(() => this.cb_StreamTCP.Enabled = connected ? true : false));
-            }
-            else
-            {
-                this.b_recalibrate.Enabled = connected ? true : false;
-                this.cb_plotAcc.Enabled = connected ? true : false;
-                this.p_BatteryPanel.Enabled = connected ? true : false;
-                this.cb_SaveToFile.Enabled = connected ? true : false;
-                this.cb_StreamTCP.Enabled = connected ? true : false;
-            }
+        {   
+            //Check if Controls need to be invoked to enable or disable them and act accordingly
+            var i = b_recalibrate.InvokeRequired == true ? b_recalibrate.Invoke((Action)(() => this.b_recalibrate.Enabled = connected ? true : false)) : this.b_recalibrate.Enabled = connected ? true : false;
+            i = cb_plotAcc.InvokeRequired == true ? cb_plotAcc.Invoke((Action)(() => this.cb_plotAcc.Enabled = connected ? true : false)) : this.cb_plotAcc.Enabled = connected ? true : false;
+            i = p_BatteryPanel.InvokeRequired == true ? p_BatteryPanel.Invoke((Action)(() => this.p_BatteryPanel.Enabled = connected ? true : false)) : this.p_BatteryPanel.Enabled = connected ? true : false;
+            i = cb_SaveToFile.InvokeRequired == true ? cb_SaveToFile.Invoke((Action)(() => this.cb_SaveToFile.Enabled = connected ? true : false)) : this.cb_SaveToFile.Enabled = connected ? true : false;
+            i = cb_StreamTCP.InvokeRequired == true ? cb_StreamTCP.Invoke((Action)(() => this.cb_StreamTCP.Enabled = connected ? true : false)) : this.cb_StreamTCP.Enabled = connected ? true : false;
+
+            //if (b_recalibrate.InvokeRequired)
+            //{
+            //    //b_recalibrate.Invoke((Action)(() => this.b_recalibrate.Enabled = connected ? true : false));
+            //    //cb_plotAcc.Invoke((Action)(() => this.cb_plotAcc.Enabled = connected ? true : false));
+            //    //p_BatteryPanel.Invoke((Action)(() => this.p_BatteryPanel.Enabled = connected ? true : false));
+            //    //cb_SaveToFile.Invoke((Action)(() => this.cb_SaveToFile.Enabled = connected ? true : false));
+            //    //cb_StreamTCP.Invoke((Action)(() => this.cb_StreamTCP.Enabled = connected ? true : false));
+            //}
+            //else
+            //{
+            //    //this.b_recalibrate.Enabled = connected ? true : false;
+            //    //this.cb_plotAcc.Enabled = connected ? true : false;
+            //    //this.p_BatteryPanel.Enabled = connected ? true : false;
+            //    //this.cb_SaveToFile.Enabled = connected ? true : false;
+            //    this.cb_StreamTCP.Enabled = connected ? true : false;
+            //}
 
             if (connected)
             {
                 pb_connect.BeginInvoke((Action)(() => this.pb_connect.Text = "Disconnect"));
+                p_BatteryPanel.BeginInvoke((Action)(() => update_battery(null, null)));
                 p_BatteryPanel.BeginInvoke((Action)(() => this.UpdateBatteryTimer.Start()));
+                l_sys.BeginInvoke((Action)(() => this.UpdateCalibrationLabelTimer.Start()));
             }
             else
             {
                 pb_connect.BeginInvoke((Action)(() => this.pb_connect.Text = "Connect"));
                 p_BatteryPanel.BeginInvoke((Action)(() => this.UpdateBatteryTimer.Stop()));
+                l_sys.BeginInvoke((Action)(() => this.UpdateCalibrationLabelTimer.Stop()));
             }
         }
 
@@ -161,18 +175,27 @@ namespace BLE_Drive_UI
             }
         }
 
-        private void Form_ChangeLabel(object sender, changeLabelEventArgs e)
+        //private void Form_ChangeLabel(object sender, changeLabelEventArgs e)
+        //{
+        //    foreach (Control x in this.Controls)
+        //    {
+        //        if (x.Name == e.label)
+        //        {
+        //            if(x.InvokeRequired)
+        //                x.Invoke((Action)delegate { x.Text = e.value; });
+        //            else
+        //                x.Text = e.value;
+        //        }
+        //    }
+        //}
+
+        private void update_calibLabel(object sender, EventArgs e)
         {
-            foreach (Control x in this.Controls)
-            {
-                if (x.Name == e.label)
-                {
-                    if(x.InvokeRequired)
-                        x.Invoke((Action)delegate { x.Text = e.value; });
-                    else
-                        x.Text = e.value;
-                }
-            }
+            var calib = _BLEdriver.Calibration;
+            l_sys.Text = calib[0];
+            l_gyr.Text = calib[1];
+            l_acc.Text = calib[2];
+            l_mag.Text = calib[3];
         }
 
         private void BLEdriver_StatusChanged(object sender, statusChangedEventArgs e)
@@ -265,7 +288,8 @@ namespace BLE_Drive_UI
 
         private void b_recalibrate_Click(object sender, EventArgs e)
         {
-            _BLEdriver.Recalibrate_imu();
+            var selectedDevice = (BLEdevice)this.lv_Device_List.SelectedItems[0].Tag;
+            _BLEdriver.Recalibrate_imu(selectedDevice);
         }
 
         private void mw_form_Load(object sender, EventArgs e)

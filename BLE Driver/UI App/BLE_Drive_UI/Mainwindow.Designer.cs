@@ -29,9 +29,9 @@ namespace BLE_Drive_UI
         /// </summary>
         private void InitializeComponent()
         {
-            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea2 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
-            System.Windows.Forms.DataVisualization.Charting.Legend legend2 = new System.Windows.Forms.DataVisualization.Charting.Legend();
-            System.Windows.Forms.DataVisualization.Charting.Series series2 = new System.Windows.Forms.DataVisualization.Charting.Series();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Legend legend1 = new System.Windows.Forms.DataVisualization.Charting.Legend();
+            System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
             this.pb_Refresh_List = new System.Windows.Forms.Button();
             this.lv_Device_List = new System.Windows.Forms.ListView();
             this.name = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
@@ -78,7 +78,7 @@ namespace BLE_Drive_UI
             this.lv_Device_List.HideSelection = false;
             this.lv_Device_List.Location = new System.Drawing.Point(133, 30);
             this.lv_Device_List.Name = "lv_Device_List";
-            this.lv_Device_List.Size = new System.Drawing.Size(318, 420);
+            this.lv_Device_List.Size = new System.Drawing.Size(318, 449);
             this.lv_Device_List.TabIndex = 1;
             this.lv_Device_List.UseCompatibleStateImageBehavior = false;
             this.lv_Device_List.View = System.Windows.Forms.View.Details;
@@ -111,10 +111,10 @@ namespace BLE_Drive_UI
             // l_Driver_Status
             // 
             this.l_Driver_Status.AutoSize = true;
-            this.l_Driver_Status.Font = new System.Drawing.Font("Microsoft Sans Serif", 18F);
-            this.l_Driver_Status.Location = new System.Drawing.Point(193, 489);
+            this.l_Driver_Status.Font = new System.Drawing.Font("Microsoft Sans Serif", 22F);
+            this.l_Driver_Status.Location = new System.Drawing.Point(166, 493);
             this.l_Driver_Status.Name = "l_Driver_Status";
-            this.l_Driver_Status.Size = new System.Drawing.Size(21, 29);
+            this.l_Driver_Status.Size = new System.Drawing.Size(25, 36);
             this.l_Driver_Status.TabIndex = 3;
             this.l_Driver_Status.Text = "`";
             // 
@@ -224,17 +224,17 @@ namespace BLE_Drive_UI
             // 
             // ch_dataPlot
             // 
-            chartArea2.Name = "ChartArea1";
-            this.ch_dataPlot.ChartAreas.Add(chartArea2);
-            legend2.Name = "Legend1";
-            this.ch_dataPlot.Legends.Add(legend2);
+            chartArea1.Name = "ChartArea1";
+            this.ch_dataPlot.ChartAreas.Add(chartArea1);
+            legend1.Name = "Legend1";
+            this.ch_dataPlot.Legends.Add(legend1);
             this.ch_dataPlot.Location = new System.Drawing.Point(471, 30);
             this.ch_dataPlot.Name = "ch_dataPlot";
-            series2.ChartArea = "ChartArea1";
-            series2.Legend = "Legend1";
-            series2.Name = "Series1";
-            this.ch_dataPlot.Series.Add(series2);
-            this.ch_dataPlot.Size = new System.Drawing.Size(790, 499);
+            series1.ChartArea = "ChartArea1";
+            series1.Legend = "Legend1";
+            series1.Name = "Series1";
+            this.ch_dataPlot.Series.Add(series1);
+            this.ch_dataPlot.Size = new System.Drawing.Size(790, 450);
             this.ch_dataPlot.TabIndex = 16;
             this.ch_dataPlot.Text = "chart1";
             // 

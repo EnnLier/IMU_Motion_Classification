@@ -23,14 +23,14 @@ namespace BLE_Drive_UI.Domain
 
             SBuffer = new String[_bufferLength];
 
-            Count = 1;
+            Count = 0;
         }
 
         public void Add(String data)
         {
             if (Count <= _bufferLength)
             {
-                SBuffer[Count - 1] = data;
+                SBuffer[Count] = data;
                 Count++;
             }
             else
@@ -45,7 +45,7 @@ namespace BLE_Drive_UI.Domain
             SBuffer.CopyTo(tmp, 0);
             //Console.WriteLine(tmp[0]);
             Clear();
-            Count = 1;
+            Count = 0;
             return tmp;
         }
 
@@ -77,6 +77,7 @@ namespace BLE_Drive_UI.Domain
         private double cummulativeRate;
 
         private String dataToSave = String.Empty;
+        private String timeStamp = String.Empty;
 
         public bool isSaving = false;
 
@@ -138,7 +139,6 @@ namespace BLE_Drive_UI.Domain
             waitForThreadsToFinish();
             Active = false;
         }
-
 
         public void addData(String data)
         {
@@ -256,6 +256,8 @@ namespace BLE_Drive_UI.Domain
             //while (SavingThread.IsAlive) { }
             //SavingThread.Start();
         }
+
+        
     }
     public class DoubleDataBufferAsync
     {

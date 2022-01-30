@@ -52,8 +52,7 @@ namespace BLE_Drive_UI.src
                 // Connect to Remote EndPoint  
                 _sender.Connect(_remoteEP);
 
-                Console.WriteLine("Socket connected to {0}",
-                    _sender.RemoteEndPoint.ToString());
+                Console.WriteLine("Socket connected to {0}",_sender.RemoteEndPoint.ToString());
 
                 OnStatusChanged("TCP Client Connected");
                 OnConnectedChanged(true);
