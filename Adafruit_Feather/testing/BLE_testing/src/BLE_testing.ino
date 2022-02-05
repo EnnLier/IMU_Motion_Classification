@@ -1,7 +1,7 @@
 #include <Bluefruit.h>
 
 #define CLIENT_NAME "BLE_windows"  
-#define HOST_NAME "IMU"  
+#define HOST_NAME "IMU2"  
 
 BLEUart bleuart;
 BLEBas blebas;
@@ -9,8 +9,8 @@ BLEBas blebas;
 bool connected = false;
 bool initialized = false;
 
-uint8_t connection_interval_min = 12; //12 * 1.25ms = 15ms
-uint8_t connection_interval_max = 20; //20 * 1.25ms = 25ms
+uint8_t connection_interval_min = 6; //12 * 1.25ms = 15ms
+uint8_t connection_interval_max = 8; //20 * 1.25ms = 25ms
 
 uint8_t connection_handle;
 
@@ -23,7 +23,7 @@ void setup()
   Serial.begin(115200);
 
   Bluefruit.autoConnLed(true);
-  Bluefruit.configPrphBandwidth(BANDWIDTH_NORMAL);
+  Bluefruit.configPrphBandwidth(BANDWIDTH_HIGH);
   Bluefruit.begin(1,0);
   Bluefruit.setTxPower(0);  
   Bluefruit.setName(HOST_NAME);
@@ -43,11 +43,12 @@ void setup()
   blebas.setUuid(bat_uuid);
   blebas.begin();
 
-  dataTimer.begin(50,SendData,0,true);
+  dataTimer.begin(5,SendData,0,true);
 
   Serial.println("Advertising");
   advertise();
 }
+
 
 void advertise()
 {
@@ -89,33 +90,46 @@ void onDisconnect(uint16_t conn_handle, uint8_t reason)
   Serial.print("Disconnected, reason = 0x"); Serial.println(reason, HEX);
 }
 
-uint8_t data[10] = {0,0,0,0,0,0,0,0,0,0};
+char data[22] = {0x01,'0','0','0','1','0','1','2','0','0','1','0','1','2','0','0','1','0','1','2'};
+char dataToSend[22] = {'A','0','0','0','1','0','1','2','0','0','1','0','1','2','0','0','1','0','1','2'};
 
 void loop() 
 {
-  delay(1000);
-  Serial.println("tic..");
+  // Serial.println("tic..");
 
-  for(int i = 0; i < 10; i++)
+  for(int i = 0; i < 22; i++)
   {
-    data[i] = rand() % 10;
+    data[i] = (char)(rand() % 10);
   } 
+  data[0] = 0x01;
+  memcpy(&dataToSend,&data,22);
+  
+  delay(5);
 }
 
 void bleuart_rx_callback(uint16_t conn_hdl)
 {
-  uint32_t t_size = bleuart.available();
+  uint32_t size = bleuart.available();
 
-  char str[t_size];
-  bleuart.read(str, t_size);
+  char buf[size];
+  bleuart.read(buf, size);
+  String str(buf);
 
-  Serial.println(str);
-
+  if (str.substring(0,11).compareTo("Recalibrate") == 0)
+  {
+    Serial.println("Recalibrate!");
+    // isCalibrated = false;
+  }
+  if (str.substring(0,10).compareTo("Disconnect") == 0)
+  {
+    Bluefruit.disconnect(connection_handle);
+  }
 }
 
 void SendData(TimerHandle_t handle)
 { 
-  bleuart.write(data,10);
+  // Serial.println(dataToSend);
+  bleuart.write(dataToSend,22);
   digitalToggle(LED_RED);
 }
 
