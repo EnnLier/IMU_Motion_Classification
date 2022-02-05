@@ -12,7 +12,7 @@ The used IMU is the [Adafruit version](https://learn.adafruit.com/adafruit-bno05
 ### Battery
 The [Adafruit Feather](#adafruit-feather) is able to to draw power via USB or battery over its JST connector. Is a battery connected and the microcontroller is also pluged in via the USB connector, the Battery will conveniently charge automatically until it is fully loaded. If only the battery is plugged in, the adafruit is able to read the voltage and calculate the remaining capacity. I am currently using a standard 3.7V LiPo battery with a capacity of 350mAh. The maximum runtime is yet TBD. 
 
-### Casing
+## Casing
 <img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/src/Sensor_bundle.png" alt="Stacked sensor bundle" width="600">
 
 <img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/src/Casing_open.png" alt="Sensorcasing" width="600">
