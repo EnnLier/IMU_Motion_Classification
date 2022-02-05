@@ -1,9 +1,8 @@
 # IMU_Motion_Classification
-
-The goal of this project is to determine skateboard stunts based on IMU data. The movement of the board is measured with up to two [Bosch BNO055](#bosch_bno055) IMUs, which are each mounted on an [Adafruit-Feather-Express](#adafruit-feather). To evaluate the data offline, the microcontroller is connected to a PC. This project contains a windows [driver](#ble-driver), which can connect to the microcontroller via Bluetooth Low Energy. After a connection is established, the GUI provides the possibility to plot (in GUI), save (local) and stream (via TCP) the incoming data. This project also provides a live [visualization](#visualization) of the measurments.
+The goal of this project is to determine skateboard stunts based on IMU data. The movement of the board is measured with up to two [Bosch BNO055](#bosch_bno055) IMUs, which are each mounted on an [Adafruit-Feather-Express](#adafruit-feather-express). To evaluate the data offline, the microcontroller is connected to a PC. This project contains a windows [driver](#ble-driver), which can connect to the microcontroller via Bluetooth Low Energy. After a connection is established, the GUI provides the possibility to plot (in GUI), save (local) and stream (via TCP) the incoming data. This project also provides a live [visualization](#visualization) of the measurments.
 
 ## Hardware
-### Adafruit Feather
+### Adafruit Feather Express
 For this prototype I decided to use the [Adafruit-Feather-Express](https://www.adafruit.com/product/4062) as the acting microcontroller. It comes with a built in [nrf52480](https://www.nordicsemi.com/Products/nRF52840) Bluetooth chip from Nordic Semiconductors and a fairly decent processor. 
 
 ### Bosch BNO055
@@ -20,6 +19,8 @@ The [Adafruit Feather](#adafruit-feather) is able to to draw power via USB or ba
 <img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/src/Casing_closed.png" alt="Assembled sensor and its casing"  width="600">
 
 <img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/src/Casing_bottom_below.png" alt="View from below"  width="600">
+
+## Adafruit Feather
 
 
 ## BLE Driver
