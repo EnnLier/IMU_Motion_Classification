@@ -1,11 +1,20 @@
+/**
+ * @file BLE_IMU.ino
+ * @author Enno Liermann (EnnoLiermann@web.de)
+ * @brief Arduino code which runs on the Adafruit-Feather-Express. It reads data from a Bosch BNO055 Sensor and forwards it via Bluetooth Low Energy
+ * @version 0.1
+ * @date 2022-02-05
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
+
 #include <Bluefruit.h>
 #include <Adafruit_BNO055.h>
 #include <Adafruit_NeoPixel.h>
 #include <Arduino.h>
 #include <Adafruit_LittleFS.h>
 #include <InternalFileSystem.h>
-
-// using namespace Adafruit_LittleFS_Namespace;
 
 #define CLIENT_NAME "BLE_windows"  
 #define HOST_NAME "IMU"  
@@ -15,7 +24,6 @@
 #define VBATPIN A6
 #define CASE_LED_RED 6
 #define CASE_LED_GREEN 5
-   
 
 BLEUart bleuart;
 BLEBas blebas;
@@ -62,6 +70,11 @@ const String BNO_Error[11] = {
      "Fusion algorithm configuration error",
      "Sensor configuration error"};
 
+
+/**
+ * @brief Setup function, which will run only once right after execution
+ * 
+ */
 void setup() 
 {
   Serial.begin(115200);
@@ -136,6 +149,11 @@ void setup()
   advertise();
 }
 
+/**
+ * @brief Starts BLE Advertising with device name as parameter
+ *
+ * 
+ */
 void advertise()
 {
   Serial.println("Advertising");
@@ -151,7 +169,11 @@ void advertise()
   Bluefruit.Advertising.start(0); 
 }
 
-
+/**
+ * @brief Callback function which is raised when a device is trying to connect to this microcontroller. 
+ * 
+ * @param conn_handle Connection handle for device, which raised the event. If connection condition is met, this handle is saved globally
+ */
 void onConnect(uint16_t conn_handle)
 {
   connection_handle  = conn_handle;
@@ -170,6 +192,12 @@ void onConnect(uint16_t conn_handle)
   blebas.notify(get_battery_percent());
 }
 
+/**
+ * @brief Callback function which is called on disconnect event
+ * 
+ * @param conn_handle Connection handle for device, which raised the event.
+ * @param reason reason for disconnect
+ */
 void onDisconnect(uint16_t conn_handle, uint8_t reason)
 {
   (void) conn_handle;
@@ -201,6 +229,10 @@ uint8_t bufferVect[6];
 bool read = true;
 int errCount = 0;
 
+/**
+ * @brief loop function is called periodically once the setup function finishes
+ * 
+ */
 void loop() 
 {
   if (!connected) return;
@@ -265,6 +297,11 @@ void loop()
     }
 }
 
+/**
+ * @brief Callback function which is called when the connected client sends data to this device via BLE UART handle
+ * 
+ * @param conn_hdl Connection handle of corresponding device
+ */
 void bleuart_rx_callback(uint16_t conn_hdl)
 {
   uint32_t size = bleuart.available();
@@ -286,6 +323,11 @@ void bleuart_rx_callback(uint16_t conn_hdl)
 
 
 int num = 0;
+/**
+ * @brief Callback function from timer, which writes current IMU data to outgoing BLE buffer
+ * 
+ * @param handle Handle of corresponding timer
+ */
 void SendData(TimerHandle_t handle)
 { 
   num++;
@@ -300,6 +342,12 @@ void SendData(TimerHandle_t handle)
 }
 
 
+/**
+ * @brief This function is called once, after the connection if established and the host is notified. 
+ * 
+ * @param conn_hdl corresponding handle of connected device
+ * @param enabled 
+ */
 void bleuart_notify_callback(uint16_t conn_hdl, bool enabled)
 {
   Serial.println("Notify ON!");
@@ -307,6 +355,12 @@ void bleuart_notify_callback(uint16_t conn_hdl, bool enabled)
   dataTimer.start();
 }
 
+/**
+ * @brief This function loads calibration data for the connected IMU
+ * 
+ * @return true Succesfully read calibration data
+ * @return false Failed opening file with calibration data
+ */
 bool load_calibration()
 {
   Serial.println("load_calibration");
@@ -340,6 +394,12 @@ bool load_calibration()
   }
 }
 
+/**
+ * @brief Saves the calibration values of the IMU to locla filesystem
+ * 
+ * @return true saving successful
+ * @return false saving failed
+ */
 bool save_calibration()
 {
   InternalFS.remove(FILENAME);
@@ -365,6 +425,11 @@ bool save_calibration()
   }
 }
 
+/**
+ * @brief Reads voltage of connected LiPo battery and compares measurement with lookuptable to determine capacity in percent 
+ * 
+ * @return uint8_t Battery percentage
+ */
 uint8_t get_battery_percent()
 {
   float measuredvbat = analogRead(VBATPIN);
@@ -416,7 +481,11 @@ uint8_t get_battery_percent()
     return 0;
 }
 
-
+/**
+ * @brief Print Calibration data
+ * 
+ * @param calibrations calibration data from IMU
+ */
 void print_calib(adafruit_bno055_offsets_t calibrations)
 {
     Serial.print("accx ");
@@ -441,6 +510,12 @@ void print_calib(adafruit_bno055_offsets_t calibrations)
     Serial.println(calibrations.mag_offset_z);
 }
 
+/**
+ * @brief creates logical array of byte 
+ * 
+ * @param arr empty array, which gets filled by this function 
+ * @param n 8 bit value which is written to arr variable
+ */
 void toBin(bool arr[],uint8_t n)
 {
   for (int i = 7; i >= 0; --i) 
@@ -449,9 +524,20 @@ void toBin(bool arr[],uint8_t n)
   }
 }
 
-bool elementsEqual(uint8_t arr[],uint8_t len)
+/**
+ * @brief Checks if all elements in array are equal
+ * 
+ * @param arr check if this array contains only equal elements
+ * @param len length of array to check (optional)
+ * @return true all elements are equal
+ * @return false not all elements are equal
+ */
+bool elementsEqual(uint8_t arr[],uint8_t len = 0)
 {
-
+  if (len == 0)
+  {
+    len == sizeof(arr);
+  }
   for (int i = 0; i < len-1; i++) 
   {
     // Serial.println(arr[i] != arr[i++]);
@@ -463,7 +549,11 @@ bool elementsEqual(uint8_t arr[],uint8_t len)
   return true;
 }
 
-void getStatus(TimerHandle_t handle)
+/**
+ * @brief Read current system status from IMU
+ * 
+ */
+void getStatus()
 {
   bool bin[8];
   
@@ -491,9 +581,12 @@ void getStatus(TimerHandle_t handle)
   Serial.println(BNO_Error[system_error]);
 }
 
-
-
-
+/**
+ * @brief Prints directory tree of filesystem
+ * 
+ * @param cwd starting directory
+ * @param level level until recursiv algorithm stops
+ */
 void printTreeDir(const char* cwd, uint8_t level)
 {
   // Open the input folder
