@@ -4,27 +4,33 @@ The goal of this project is to determine skateboard stunts based on IMU data. Th
 ## Hardware
 ### Adafruit Feather Express
 For this prototype I decided to use the [Adafruit-Feather-Express](https://www.adafruit.com/product/4062) as the acting microcontroller. It comes with a built in [nrf52480](https://www.nordicsemi.com/Products/nRF52840) Bluetooth chip from Nordic Semiconductors and a fairly decent processor. 
+<p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Images/Adafruit_Feather_Express.jpg" alt="Adafruit Feather Express" width="600"></p>
 
 ### Bosch BNO055
 The used IMU is the [Adafruit version](https://learn.adafruit.com/adafruit-bno055-absolute-orientation-sensor) of the [Bosch BNO055](https://www.bosch-sensortec.com/products/smart-sensors/bno055/) smart sensor. The sensor uses a hardware implemented fusion algorithm which uses gyroscope, accelerometer and magnetometer data to predict an absolute orientation. Since there is no need to calculate the absolute orientation for this project, the fusion algorithm changed to predict the relative orientation using only the accelerometer and the gyroscope data. This operating mode requires less power and outputs data at a higher rate of about 100Hz.
+<p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Images/Bosch_BNO055.jpg" alt="Bosch BNO055" width="600"></p>
 
 ### Battery
-The [Adafruit Feather](#adafruit-feather) is able to to draw power via USB or battery over its JST connector. Is a battery connected and the microcontroller is also pluged in via the USB connector, the Battery will conveniently charge automatically until it is fully loaded. If only the battery is plugged in, the adafruit is able to read the voltage and calculate the remaining capacity. I am currently using a standard 3.7V LiPo battery with a capacity of 350mAh. The maximum runtime is yet TBD. 
+The [Adafruit Feather](#adafruit-feather-express) is able to to draw power via USB or battery over its JST connector. Is a battery connected and the microcontroller is also pluged in via the USB connector, the Battery will conveniently charge automatically until it is fully loaded. If only the battery is plugged in, the adafruit is able to read the voltage and calculate the remaining capacity. I am currently using a standard 3.7V LiPo battery with a capacity of 350mAh. The maximum runtime is yet TBD. 
+<p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Images/LiPo.jpg" alt="LiPo Akku 3,7V JST" width="600"></p>
 
 ## Casing
-<img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/src/Sensor_bundle.png" alt="Stacked sensor bundle" width="600">
+<p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/src/Sensor_bundle.png" alt="Stacked sensor bundle" width="600"></p>
 
-<img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/src/Casing_open.png" alt="Sensorcasing" width="600">
+<p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/src/Casing_open.png" alt="Sensorcasing" width="600"></p>
 
-<img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/src/Casing_closed.png" alt="Assembled sensor and its casing"  width="600">
+<p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/src/Casing_closed.png" alt="Assembled sensor and its casing"  width="600"></p>
 
-<img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/src/Casing_bottom_below.png" alt="View from below"  width="600">
+<p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/src/Casing_bottom_below.png" alt="View from below"  width="600"></p>
 
 ## Adafruit Feather
-
+This folder contains the software for the Adafruit feather, written in c++. 
 
 ## BLE Driver
 Windows driver which is used to receive IMU data via BLE. Data is blindly streamed to specific TCP port
+
+## Data Evaluation
+Contains Matlab code to read data from .txt files. It also provides code for offline evaluation of the measurements.
 
 ## Visualization
 Unity visualization of incoming IMU data
