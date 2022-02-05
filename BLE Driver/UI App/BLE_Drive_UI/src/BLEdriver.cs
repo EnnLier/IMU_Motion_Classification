@@ -40,7 +40,7 @@ namespace BLE_Drive_UI.src
         //public event EventHandler<changeLabelEventArgs> ChangeLabel;
         public event EventHandler<imuDataEventArgs> UpdateChart;
         public event EventHandler SelectedDeviceFound;
-        public event EventHandler<bool> ConnectedChanged;
+        public event EventHandler<ConnectedChangedEventArgs> ConnectedChanged;
         //public event Action<int> UpdateBatteryInfo;
 
         private object m_DataLock = new object();
@@ -283,63 +283,72 @@ namespace BLE_Drive_UI.src
             if (sender.Service.AttributeHandle == ConnectedDeviceInformationList[0].BLEuartCharacteristic.Service.AttributeHandle)
             //if (sender.Service.AttributeHandle == ConnectedDeviceInformation.BLEuartCharacteristic.Service.AttributeHandle)
             {
-                var data = new Byte[_packetsize];
-                reader.ReadBytes(data);
+                try
+                { 
+                    var data = new Byte[_packetsize];
+                    reader.ReadBytes(data);
 
-                var id = data[0];
-                var calib = data[1];
+                    var id = data[0];
+                    var calib = data[1];
 
-                lock(m_DataLockCalib)
-                {
-                    Calibration[0] = ((calib >> 6) & 0x03).ToString();      //sys
-                    Calibration[1] = ((calib >> 4) & 0x03).ToString();      //gyr
-                    Calibration[2] = ((calib >> 2) & 0x03).ToString();      //acc
-                    Calibration[3] = ((calib) & 0x03).ToString();           //mag
-                }
+                    lock(m_DataLockCalib)
+                    {
+                        Calibration[0] = ((calib >> 6) & 0x03).ToString();      //sys
+                        Calibration[1] = ((calib >> 4) & 0x03).ToString();      //gyr
+                        Calibration[2] = ((calib >> 2) & 0x03).ToString();      //acc
+                        Calibration[3] = ((calib) & 0x03).ToString();           //mag
+                    }
                 
-                var off = 2;
-                var scalingFactor = (1.00 / (1 << 14));
-                float quatW, quatX, quatY, quatZ;
-                quatW = (float)scalingFactor * ((Int16)(data[off + 0] | (data[off + 1] << 8)));
-                quatX = (float)scalingFactor * ((Int16)(data[off + 2] | (data[off + 3] << 8)));
-                quatY = (float)scalingFactor * ((Int16)(data[off + 4] | (data[off + 5] << 8)));
-                quatZ = (float)scalingFactor * ((Int16)(data[off + 6] | (data[off + 7] << 8)));
+                    var off = 2;
+                    var scalingFactor = (1.00 / (1 << 14));
+                    float quatW, quatX, quatY, quatZ;
+                    quatW = (float)scalingFactor * ((Int16)(data[off + 0] | (data[off + 1] << 8)));
+                    quatX = (float)scalingFactor * ((Int16)(data[off + 2] | (data[off + 3] << 8)));
+                    quatY = (float)scalingFactor * ((Int16)(data[off + 4] | (data[off + 5] << 8)));
+                    quatZ = (float)scalingFactor * ((Int16)(data[off + 6] | (data[off + 7] << 8)));
 
-                off = 10;
-                scalingFactor = (1.00 / 100.0);// 1m/s^2 = 100 LSB 
-                float x_a, y_a, z_a;
-                x_a = (float)scalingFactor * ((Int16)(data[off + 0] | (data[off + 1] << 8)));
-                y_a = (float)scalingFactor * ((Int16)(data[off + 2] | (data[off + 3] << 8)));
-                z_a = (float)scalingFactor * ((Int16)(data[off + 4] | (data[off + 5] << 8)));
+                    off = 10;
+                    scalingFactor = (1.00 / 100.0);// 1m/s^2 = 100 LSB 
+                    float x_a, y_a, z_a;
+                    x_a = (float)scalingFactor * ((Int16)(data[off + 0] | (data[off + 1] << 8)));
+                    y_a = (float)scalingFactor * ((Int16)(data[off + 2] | (data[off + 3] << 8)));
+                    z_a = (float)scalingFactor * ((Int16)(data[off + 4] | (data[off + 5] << 8)));
 
-                off = 16;
-                scalingFactor = (1.00 / 16.0);// 1dps = 16 LSB
-                float gyrx, gyry, gyrz;
-                gyrx = (float)scalingFactor * ((Int16)(data[off + 0] | (data[off + 1] << 8)));
-                gyry = (float)scalingFactor * ((Int16)(data[off + 2] | (data[off + 3] << 8)));
-                gyrz = (float)scalingFactor * ((Int16)(data[off + 4] | (data[off + 5] << 8)));
+                    off = 16;
+                    scalingFactor = (1.00 / 16.0);// 1dps = 16 LSB
+                    float gyrx, gyry, gyrz;
+                    gyrx = (float)scalingFactor * ((Int16)(data[off + 0] | (data[off + 1] << 8)));
+                    gyry = (float)scalingFactor * ((Int16)(data[off + 2] | (data[off + 3] << 8)));
+                    gyrz = (float)scalingFactor * ((Int16)(data[off + 4] | (data[off + 5] << 8)));
 
 
-                lock (m_DataLock)
-                {
-                    dataToPlot = new float[] { x_a, y_a, z_a, gyrx, gyry, gyrz };
+                    lock (m_DataLock)
+                    {
+                        dataToPlot[id * 3 + 0] = x_a;
+                        dataToPlot[id * 3 + 1] = y_a;
+                        dataToPlot[id * 3 + 2] = z_a;
+                        //dataToPlot = new float[] { x_a, y_a, z_a, gyrx, gyry, gyrz };
+                    }
+
+                    if (IsStreaming && _tcpStreamer != null)
+                    {
+                        _tcpStreamer.sendDataTCP(data);
+                    }
+                    if (IsSaving && _dataSaver != null)
+                    {
+                        stringToSave = id.ToString() + " " + Calibration[0] + " " + Calibration[1] + " " + Calibration[2] + " " + Calibration[3] + " " + quatW.ToString("0.0000") + " " + quatX.ToString("0.0000") + " " + quatY.ToString("0.0000") + " " + quatZ.ToString("0.0000") + " "
+                        + x_a.ToString("0.0000") + " " + y_a.ToString("0.0000") + " " + z_a.ToString("0.0000") + " " + gyrx.ToString("0.0000") + " " + gyry.ToString("0.0000") + " " + gyrz.ToString("0.0000");
+                        _dataSaver.addData(stringToSave);
+                    }
+                    //if (isPlotting)
+                    //{
+                    //    OnaccelerationData(x_a, y_a, z_a, gyrx, gyry, gyrz);
+                    //}
                 }
-
-                if (IsStreaming && _tcpStreamer != null)
+                catch(System.Exception e)
                 {
-                    _tcpStreamer.sendDataTCP(data);
+                    Console.WriteLine(e.Message);
                 }
-                if (IsSaving && _dataSaver != null)
-                {
-                    stringToSave = id.ToString() + " " + Calibration[0] + " " + Calibration[1] + " " + Calibration[2] + " " + Calibration[3] + " " + quatW.ToString("0.0000") + " " + quatX.ToString("0.0000") + " " + quatY.ToString("0.0000") + " " + quatZ.ToString("0.0000") + " "
-                    + x_a.ToString("0.0000") + " " + y_a.ToString("0.0000") + " " + z_a.ToString("0.0000") + " " + gyrx.ToString("0.0000") + " " + gyry.ToString("0.0000") + " " + gyrz.ToString("0.0000");
-                    _dataSaver.addData(stringToSave);
-                }
-                //if (isPlotting)
-                //{
-                //    OnaccelerationData(x_a, y_a, z_a, gyrx, gyry, gyrz);
-                //}
-
             }
 
         }
@@ -383,33 +392,41 @@ namespace BLE_Drive_UI.src
 
         private void BLEConnectionStatusChangedEvent(BluetoothLEDevice sender, object args)
         {
-            Console.WriteLine("Connection Status changed: " + sender.ConnectionStatus);
-            Connected = sender.ConnectionStatus.ToString() == "Connected" ? true : false;
-            OnStatusChanged(sender.ConnectionStatus.ToString());
+            BLEdevice device = null;
+            foreach (var dev in ConnectedDeviceInformationList)
+            {
+                if (dev.Name.Equals(sender.Name))
+                {
+                    device = dev;
+                    break;
+                }
+            }
 
-            if(Connected)
+            //Console.WriteLine("Connection Status changed: " + sender.ConnectionStatus);
+            var connected = sender.ConnectionStatus.ToString() == "Connected" ? true : false;
+            OnStatusChanged(sender.ConnectionStatus.ToString() + " to " + sender.Name);
+
+
+            if(connected)
             {
 
             }
             else
             {
                 for (int i = 0; i < 4; i++)
-                    Calibration[i] = "0";
-                foreach (var device in ConnectedDeviceInformationList)
                 {
-                    if (device.Name.Equals(sender.Name))
-                    {
-                        ConnectedDeviceInformationList.Remove(device);
-                        break;
-                    }
+                    Calibration[i] = "0";
                 }
+                ConnectedDeviceInformationList.Remove(device);
             }
 
-
-            EventHandler<bool> handler = ConnectedChanged;
+            ConnectedChangedEventArgs  e = new ConnectedChangedEventArgs();
+            e.device = device;
+            e.status = connected;
+            EventHandler<ConnectedChangedEventArgs> handler = ConnectedChanged;
             if (handler != null)
             {
-                handler(this, Connected);
+                handler(this, e);
             }
 
         }

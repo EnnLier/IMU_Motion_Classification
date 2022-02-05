@@ -65,8 +65,10 @@ namespace BLE_Drive_UI
         }
 
 
-        private void BLEDriver_ConnectedChanged(object sender, bool connected)
+        private void BLEDriver_ConnectedChanged(object sender, ConnectedChangedEventArgs args)
         {   
+            var connected = args.status;
+            var device = args.device;
             //Check if Controls need to be invoked to enable or disable them and act accordingly
             var i = b_recalibrate.InvokeRequired == true ? b_recalibrate.Invoke((Action)(() => this.b_recalibrate.Enabled = connected ? true : false)) : this.b_recalibrate.Enabled = connected ? true : false;
             i = cb_plotAcc.InvokeRequired == true ? cb_plotAcc.Invoke((Action)(() => this.cb_plotAcc.Enabled = connected ? true : false)) : this.cb_plotAcc.Enabled = connected ? true : false;
@@ -93,14 +95,15 @@ namespace BLE_Drive_UI
 
             if (connected)
             {
-                pb_connect.BeginInvoke((Action)(() => this.pb_connect.Text = "Disconnect"));
+                pb_connect_front.BeginInvoke((Action)(() => this.pb_connect_front.Text = "Disconnect"));
                 p_BatteryPanel.BeginInvoke((Action)(() => update_battery(null, null)));
                 p_BatteryPanel.BeginInvoke((Action)(() => this.UpdateBatteryTimer.Start()));
                 l_sys.BeginInvoke((Action)(() => this.UpdateCalibrationLabelTimer.Start()));
             }
             else
             {
-                pb_connect.BeginInvoke((Action)(() => this.pb_connect.Text = "Connect"));
+                pb_connect_front.BeginInvoke((Action)(() => this.pb_connect_front.Text = "Connect Front"));
+                pb_connect_back.BeginInvoke((Action)(() => this.pb_connect_back.Text = "Connect Back"));
                 p_BatteryPanel.BeginInvoke((Action)(() => this.UpdateBatteryTimer.Stop()));
                 l_sys.BeginInvoke((Action)(() => this.UpdateCalibrationLabelTimer.Stop()));
             }
@@ -149,21 +152,21 @@ namespace BLE_Drive_UI
             
         }
 
-        private void pb_connect_Click(object sender, EventArgs e)
+        private void pb_connect_front_Click(object sender, EventArgs e)
         {
             try
             {
                 if(_BLEdriver.Busy) return;
-                if(pb_connect.Text == "Connect")
+                if(pb_connect_front.Text == "Connect Front")
                 {
                     var selectedDevice = (BLEdevice)this.lv_Device_List.SelectedItems[0].Tag;
-
+                    selectedDevice.isFront = true;
                     if (_BLEdriver != null)
                     {
                         _BLEdriver.ConnectDevice(selectedDevice);
                     }
                 }
-                else if(pb_connect.Text == "Disconnect")
+                else if(pb_connect_front.Text == "Disconnect")
                 {
                     _BLEdriver.Disconnect();
                 }
@@ -175,19 +178,31 @@ namespace BLE_Drive_UI
             }
         }
 
-        //private void Form_ChangeLabel(object sender, changeLabelEventArgs e)
-        //{
-        //    foreach (Control x in this.Controls)
-        //    {
-        //        if (x.Name == e.label)
-        //        {
-        //            if(x.InvokeRequired)
-        //                x.Invoke((Action)delegate { x.Text = e.value; });
-        //            else
-        //                x.Text = e.value;
-        //        }
-        //    }
-        //}
+        private void pb_connect_back_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (_BLEdriver.Busy) return;
+                if (pb_connect_back.Text == "Connect Back")
+                {
+                    var selectedDevice = (BLEdevice)this.lv_Device_List.SelectedItems[0].Tag;
+                    selectedDevice.isFront = false;
+                    if (_BLEdriver != null)
+                    {
+                        _BLEdriver.ConnectDevice(selectedDevice);
+                    }
+                }
+                else if (pb_connect_back.Text == "Disconnect")
+                {
+                    _BLEdriver.Disconnect();
+                }
+                //pb_connect.Enabled = false;
+            }
+            catch (System.ArgumentOutOfRangeException)
+            {
+                Console.WriteLine("Nothing Highlighted");
+            }
+        }
 
         private void update_calibLabel(object sender, EventArgs e)
         {
@@ -515,7 +530,5 @@ namespace BLE_Drive_UI
             //Console.WriteLine(watch.ElapsedMilliseconds);
             //watch.Restart();
         }
-
-
     }
 }

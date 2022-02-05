@@ -37,7 +37,7 @@ namespace BLE_Drive_UI
             this.name = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.ID = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.canConnect = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.pb_connect = new System.Windows.Forms.Button();
+            this.pb_connect_front = new System.Windows.Forms.Button();
             this.l_Driver_Status = new System.Windows.Forms.Label();
             this.cb_SaveToFile = new System.Windows.Forms.CheckBox();
             this.cb_StreamTCP = new System.Windows.Forms.CheckBox();
@@ -54,6 +54,7 @@ namespace BLE_Drive_UI
             this.cb_plotAcc = new System.Windows.Forms.CheckBox();
             this.p_BatteryPanel = new System.Windows.Forms.Panel();
             this.l_batteryLabel = new System.Windows.Forms.Label();
+            this.pb_connect_back = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.ch_dataPlot)).BeginInit();
             this.SuspendLayout();
             // 
@@ -98,15 +99,15 @@ namespace BLE_Drive_UI
             this.canConnect.Text = "Can Connect";
             this.canConnect.Width = 81;
             // 
-            // pb_connect
+            // pb_connect_front
             // 
-            this.pb_connect.Location = new System.Drawing.Point(21, 70);
-            this.pb_connect.Name = "pb_connect";
-            this.pb_connect.Size = new System.Drawing.Size(97, 30);
-            this.pb_connect.TabIndex = 2;
-            this.pb_connect.Text = "Connect";
-            this.pb_connect.UseVisualStyleBackColor = true;
-            this.pb_connect.Click += new System.EventHandler(this.pb_connect_Click);
+            this.pb_connect_front.Location = new System.Drawing.Point(21, 70);
+            this.pb_connect_front.Name = "pb_connect_front";
+            this.pb_connect_front.Size = new System.Drawing.Size(97, 30);
+            this.pb_connect_front.TabIndex = 2;
+            this.pb_connect_front.Text = "Connect Front";
+            this.pb_connect_front.UseVisualStyleBackColor = true;
+            this.pb_connect_front.Click += new System.EventHandler(this.pb_connect_front_Click);
             // 
             // l_Driver_Status
             // 
@@ -121,7 +122,7 @@ namespace BLE_Drive_UI
             // cb_SaveToFile
             // 
             this.cb_SaveToFile.AutoSize = true;
-            this.cb_SaveToFile.Location = new System.Drawing.Point(21, 106);
+            this.cb_SaveToFile.Location = new System.Drawing.Point(21, 148);
             this.cb_SaveToFile.Name = "cb_SaveToFile";
             this.cb_SaveToFile.Size = new System.Drawing.Size(79, 17);
             this.cb_SaveToFile.TabIndex = 5;
@@ -132,7 +133,7 @@ namespace BLE_Drive_UI
             // cb_StreamTCP
             // 
             this.cb_StreamTCP.AutoSize = true;
-            this.cb_StreamTCP.Location = new System.Drawing.Point(21, 130);
+            this.cb_StreamTCP.Location = new System.Drawing.Point(21, 172);
             this.cb_StreamTCP.Name = "cb_StreamTCP";
             this.cb_StreamTCP.Size = new System.Drawing.Size(83, 17);
             this.cb_StreamTCP.TabIndex = 6;
@@ -241,7 +242,7 @@ namespace BLE_Drive_UI
             // cb_plotAcc
             // 
             this.cb_plotAcc.AutoSize = true;
-            this.cb_plotAcc.Location = new System.Drawing.Point(21, 153);
+            this.cb_plotAcc.Location = new System.Drawing.Point(21, 195);
             this.cb_plotAcc.Name = "cb_plotAcc";
             this.cb_plotAcc.Size = new System.Drawing.Size(70, 17);
             this.cb_plotAcc.TabIndex = 17;
@@ -268,9 +269,20 @@ namespace BLE_Drive_UI
             this.l_batteryLabel.TabIndex = 20;
             this.l_batteryLabel.Text = "Battery";
             // 
+            // pb_connect_back
+            // 
+            this.pb_connect_back.Location = new System.Drawing.Point(21, 106);
+            this.pb_connect_back.Name = "pb_connect_back";
+            this.pb_connect_back.Size = new System.Drawing.Size(97, 29);
+            this.pb_connect_back.TabIndex = 21;
+            this.pb_connect_back.Text = "Connect Back";
+            this.pb_connect_back.UseVisualStyleBackColor = true;
+            this.pb_connect_back.Click += new System.EventHandler(this.pb_connect_back_Click);
+            // 
             // mw_form
             // 
             this.ClientSize = new System.Drawing.Size(1416, 551);
+            this.Controls.Add(this.pb_connect_back);
             this.Controls.Add(this.l_batteryLabel);
             this.Controls.Add(this.cb_plotAcc);
             this.Controls.Add(this.ch_dataPlot);
@@ -286,7 +298,7 @@ namespace BLE_Drive_UI
             this.Controls.Add(this.cb_StreamTCP);
             this.Controls.Add(this.cb_SaveToFile);
             this.Controls.Add(this.l_Driver_Status);
-            this.Controls.Add(this.pb_connect);
+            this.Controls.Add(this.pb_connect_front);
             this.Controls.Add(this.lv_Device_List);
             this.Controls.Add(this.pb_Refresh_List);
             this.Controls.Add(this.p_BatteryPanel);
@@ -306,7 +318,7 @@ namespace BLE_Drive_UI
         private System.Windows.Forms.ColumnHeader name;
         private System.Windows.Forms.ColumnHeader ID;
         private System.Windows.Forms.ColumnHeader canConnect;
-        private System.Windows.Forms.Button pb_connect;
+        private System.Windows.Forms.Button pb_connect_front;
         private System.Windows.Forms.Label l_Driver_Status;
         private System.Windows.Forms.CheckBox cb_SaveToFile;
         private System.Windows.Forms.CheckBox cb_StreamTCP;
@@ -323,6 +335,7 @@ namespace BLE_Drive_UI
         private System.Windows.Forms.CheckBox cb_plotAcc;
         private System.Windows.Forms.Panel p_BatteryPanel;
         private System.Windows.Forms.Label l_batteryLabel;
+        private System.Windows.Forms.Button pb_connect_back;
     }
 }
 

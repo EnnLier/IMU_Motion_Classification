@@ -4,12 +4,22 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+/// <summary>
+/// This class contains all eventargs used throughout the whole project
+/// </summary>
+
 namespace BLE_Drive_UI.Domain
 {
     public class statusChangedEventArgs : EventArgs
     {
         public String Status { get; set; }
         public DateTime Timestamp { get; set; }
+    }
+    
+    public class ConnectedChangedEventArgs : EventArgs
+    {
+        public BLEdevice device { get; set; }
+        public bool status { get; set; }
     }
 
     public class imuDataEventArgs : EventArgs

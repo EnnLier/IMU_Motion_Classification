@@ -17,7 +17,6 @@ namespace BLE_Drive_UI.Domain
             Name = name;
             Id = id;
             canPair = canpair;
-        
         //Service = new Guid();
         //HandlesOfCharacteristicsOfService = new Dictionary<Guid,Dictionary<Guid, ushort>>();
 
@@ -41,6 +40,7 @@ namespace BLE_Drive_UI.Domain
         //    }
         //    return toRet;
         //}
+        public bool isFront { get; set;}
         public String Name { get; }
         public String Id { get; }
         public bool canPair { get; }
