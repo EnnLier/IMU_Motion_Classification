@@ -1,45 +1,45 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using Windows.Devices.Bluetooth.GenericAttributeProfile;
-using Windows.Devices.Bluetooth;
-using BLE_Drive_UI.Domain;
 using System.Threading;
+using System.Threading.Tasks;
+using BLE_Drive_UI.Domain;
+using Windows.Devices.Bluetooth;
+using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Storage.Streams;
-using System.Net;
-using System.IO;
-using System.Net.Sockets;
-using System.Globalization;
-using System.Timers;
-using System.Diagnostics;
 
 namespace BLE_Drive_UI.src
 {
-    class BLEdriver
+    class BLEDevice
     {
-        private BluetoothLEDevice _BLEDevice;
-        //public BLEdevice ConnectedDeviceInformation { get; set; }
-        public List<BLEDeviceInformation> ConnectedDeviceInformationList;
+        public BLEDeviceInformation DeviceInformation { get; set;}
 
-        public bool IsStreaming { get; private set; }
-        public bool IsPlotting { get; private set; }
-        public bool IsSaving { get; private set; }
+        public BLEDevice()
+        {
+            CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-US");
+            Connected = false;
+
+            //Calibration = new string[] { "0", "0", "0", "0" };
+            dataToPlot = new float[_datapoints];
+        }
+
+        private BluetoothLEDevice _BLEDevice;
 
         public bool Connected;
         public bool Busy;
         public int BatteryLevel = 0;
 
         private static UInt16 _packetsize = 22;
-        private static UInt16 _datapoints = 6;              //to Plot
-        private static UInt16 _writeBuffersize = 200;
-        private static UInt16 _writeBufferRate = 10;
+        private static UInt16 _datapoints = 10;              //to Plot
+        //private static UInt16 _writeBuffersize = 200;
+        //private static UInt16 _writeBufferRate = 10;
 
         public event EventHandler<statusChangedEventArgs> StatusChanged;
         //public event EventHandler<changeLabelEventArgs> ChangeLabel;
-        public event EventHandler<imuDataEventArgs> UpdateChart;
-        public event EventHandler SelectedDeviceFound;
+        public event EventHandler<imuDataEventArgs> sendData;
+        //public event EventHandler SelectedDeviceFound;
         public event EventHandler<ConnectedChangedEventArgs> ConnectedChanged;
         //public event Action<int> UpdateBatteryInfo;
 
@@ -47,98 +47,32 @@ namespace BLE_Drive_UI.src
         private object m_DataLockBatt = new object();
         private object m_DataLockCalib = new object();
 
-        //private doubleBuffer _doubleBuffer;
-        //public DoubleDataBufferAsync _doubleBuffer;
-        private SyncDataSaver _dataSaver;
-        private TCPStreamer _tcpStreamer;
-
-        public string[] Calibration;
+        //public string[] Calibration;
 
         public float[] dataToPlot;
         public String stringToSave = String.Empty;
 
-        public BLEdriver()
-        {
-            //Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
-            CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("en-US");
-            Connected = false;
-            IsSaving = false;
-            IsStreaming = false;
-            _dataSaver = new SyncDataSaver(_writeBuffersize, _writeBufferRate);
-            _tcpStreamer = new TCPStreamer();
-
-            _tcpStreamer.ConnectedChanged += TCPConnectionStatusChangedEvent;
-
-            Calibration = new string[] {"0","0","0","0"};
-            dataToPlot = new float[_datapoints];
-
-            ConnectedDeviceInformationList = new List<BLEDeviceInformation>();
-
-        }
-
-
-        ~BLEdriver()
-        {
-            if (IsSaving)
-                StopSaving();
-            if (IsStreaming)
-                StopStreaming();
-        }
-
         public float[] GetDataToPlot()
         {
-            lock(m_DataLock)
+            lock (m_DataLock)
             {
                 return dataToPlot;
             }
         }
 
-        public void StartStreaming()
-        {
-            Thread InitTCPThread = new Thread(_tcpStreamer.StartTCPClient);
-            InitTCPThread.Start();
-            //_tcpStreamer.StartTCPClient();
-        }
-
-        public void StopStreaming()
-        {
-            _tcpStreamer.CloseTCPClient();
-        }
-
-        public void StartSaving()
-        {
-            if(!_dataSaver.Active)
-            {
-                IsSaving = true;
-                _dataSaver.start();
-            }
-        }
-
-        public void StopSaving()
-        {
-            if (_dataSaver.Active)
-            {
-                _dataSaver.stop();
-                IsSaving = false;
-            }
-        }
-
         public void Disconnect()
         {
-            foreach (var device in ConnectedDeviceInformationList)
+            try
             {
-                try
-                {
-                    OnStatusChanged("Disconnecting " + device.Name + "...");
-                    WriteToBLEDevice(device,"Disconnect");
-                }
-                catch (System.UnauthorizedAccessException e)
-                {
-                    Console.WriteLine(e.Message);
-                    Console.WriteLine("Retrying...");
-                    Thread.Sleep(300);
-                    Disconnect();
-                }
+                OnStatusChanged("Disconnecting " + DeviceInformation.Name + "...");
+                WriteToBLEDevice(DeviceInformation, "Disconnect");
+            }
+            catch (System.UnauthorizedAccessException e)
+            {
+                Console.WriteLine(e.Message);
+                Console.WriteLine("Retrying...");
+                Thread.Sleep(300);
+                Disconnect();
             }
         }
 
@@ -161,13 +95,13 @@ namespace BLE_Drive_UI.src
         //BLE Related functions
         public async void ConnectDevice(BLEDeviceInformation deviceInformation)
         {
-            if (ConnectedDeviceInformationList.Contains(deviceInformation))
-            {
-                OnStatusChanged("Device " + deviceInformation.Name + " already connected");
-                return;
-            }
+            //if (ConnectedDeviceInformationList.Contains(deviceInformation))
+            //{
+            //    OnStatusChanged("Device " + deviceInformation.Name + " already connected");
+            //    return;
+            //}
             Busy = true;
-            //ConnectedDeviceInformation = deviceInformation;
+            //DeviceInformation = deviceInformation;
 
             OnStatusChanged("Initializing");
             try
@@ -179,7 +113,7 @@ namespace BLE_Drive_UI.src
                 //_BLEDevice.NameChanged += NameChangedEvent;
 
             }
-            catch(Exception e)
+            catch (Exception e)
             {
 
                 OnStatusChanged("Failed to connect");
@@ -238,7 +172,7 @@ namespace BLE_Drive_UI.src
                             }
                         }
                     }
-                        
+
                 }
                 try
                 {
@@ -249,7 +183,7 @@ namespace BLE_Drive_UI.src
                     }
                     else
                     {
-                        Console.WriteLine("Battery Service: + " );
+                        Console.WriteLine("Battery Service: + ");
                         OnStatusChanged("Services not found");
                     }
                 }
@@ -260,7 +194,8 @@ namespace BLE_Drive_UI.src
                 }
             }
 
-            ConnectedDeviceInformationList.Add(deviceInformation);
+            //ConnectedDeviceInformationList.Add(deviceInfomation);
+            DeviceInformation = deviceInformation;
             Busy = false;
         }
 
@@ -269,10 +204,10 @@ namespace BLE_Drive_UI.src
             var reader = DataReader.FromBuffer(args.CharacteristicValue);
             //if (ConnectedDeviceInformation.BatteryCharacteristic == null || ConnectedDeviceInformation.BLEuartCharacteristic == null) { return; }
 
-            if (sender.Service.AttributeHandle == ConnectedDeviceInformationList[0].BatteryCharacteristic.Service.AttributeHandle)
+            if (sender.Service.AttributeHandle == DeviceInformation.BatteryCharacteristic.Service.AttributeHandle)
             //if (sender.Service.AttributeHandle == ConnectedDeviceInformation.BatteryCharacteristic.Service.AttributeHandle)
             {
-                
+
                 lock (m_DataLockBatt)
                 {
                     BatteryLevel = reader.ReadByte();
@@ -280,25 +215,26 @@ namespace BLE_Drive_UI.src
                 //UpdateBatteryInfo(BatteryLevel);
                 //Console.WriteLine(BatteryLevel);
             }
-            if (sender.Service.AttributeHandle == ConnectedDeviceInformationList[0].BLEuartCharacteristic.Service.AttributeHandle)
+            if (sender.Service.AttributeHandle == DeviceInformation.BLEuartCharacteristic.Service.AttributeHandle)
             //if (sender.Service.AttributeHandle == ConnectedDeviceInformation.BLEuartCharacteristic.Service.AttributeHandle)
             {
                 try
-                { 
+                {
                     var data = new Byte[_packetsize];
                     reader.ReadBytes(data);
 
-                    var id = data[0];
-                    var calib = data[1];
+                    //var id = data[0];
+                    int id = this.DeviceInformation.isFront ? 0 : 1;
+                    byte calib = data[1];
 
-                    lock(m_DataLockCalib)
-                    {
-                        Calibration[0] = ((calib >> 6) & 0x03).ToString();      //sys
-                        Calibration[1] = ((calib >> 4) & 0x03).ToString();      //gyr
-                        Calibration[2] = ((calib >> 2) & 0x03).ToString();      //acc
-                        Calibration[3] = ((calib) & 0x03).ToString();           //mag
-                    }
-                
+                    //lock (m_DataLockCalib)
+                    //{
+                    //    Calibration[0] = ((calib >> 6) & 0x03).ToString();      //sys
+                    //    Calibration[1] = ((calib >> 4) & 0x03).ToString();      //gyr
+                    //    Calibration[2] = ((calib >> 2) & 0x03).ToString();      //acc
+                    //    Calibration[3] = ((calib) & 0x03).ToString();           //mag
+                    //}
+
                     var off = 2;
                     var scalingFactor = (1.00 / (1 << 14));
                     float quatW, quatX, quatY, quatZ;
@@ -324,28 +260,32 @@ namespace BLE_Drive_UI.src
 
                     lock (m_DataLock)
                     {
-                        dataToPlot[id * 3 + 0] = x_a;
-                        dataToPlot[id * 3 + 1] = y_a;
-                        dataToPlot[id * 3 + 2] = z_a;
-                        //dataToPlot = new float[] { x_a, y_a, z_a, gyrx, gyry, gyrz };
+                        //dataToPlot[id * 3 + 0] = x_a;
+                        //dataToPlot[id * 3 + 1] = y_a;
+                        //dataToPlot[id * 3 + 2] = z_a;
+                        //dataToPlot = new float[] { quatW, quatX, quatY, quatZ, x_a, y_a, z_a, gyrx, gyry, gyrz };
+                        //SendIMUData(id, quatW, quatX, quatY, quatZ, x_a, y_a, z_a, gyrx, gyry, gyrz );
+                        SendIMUData(id, calib, new float[] { quatW, quatX, quatY, quatZ, x_a, y_a, z_a, gyrx, gyry, gyrz });
                     }
+                    //stringToSave = id.ToString() + " " + Calibration[0] + " " + Calibration[1] + " " + Calibration[2] + " " + Calibration[3] + " " + quatW.ToString("0.0000") + " " + quatX.ToString("0.0000") + " " + quatY.ToString("0.0000") + " " + quatZ.ToString("0.0000") + " "
+                    //    + x_a.ToString("0.0000") + " " + y_a.ToString("0.0000") + " " + z_a.ToString("0.0000") + " " + gyrx.ToString("0.0000") + " " + gyry.ToString("0.0000") + " " + gyrz.ToString("0.0000");
 
-                    if (IsStreaming && _tcpStreamer != null)
-                    {
-                        _tcpStreamer.sendDataTCP(data);
-                    }
-                    if (IsSaving && _dataSaver != null)
-                    {
-                        stringToSave = id.ToString() + " " + Calibration[0] + " " + Calibration[1] + " " + Calibration[2] + " " + Calibration[3] + " " + quatW.ToString("0.0000") + " " + quatX.ToString("0.0000") + " " + quatY.ToString("0.0000") + " " + quatZ.ToString("0.0000") + " "
-                        + x_a.ToString("0.0000") + " " + y_a.ToString("0.0000") + " " + z_a.ToString("0.0000") + " " + gyrx.ToString("0.0000") + " " + gyry.ToString("0.0000") + " " + gyrz.ToString("0.0000");
-                        _dataSaver.addData(stringToSave);
-                    }
+                    //if (IsStreaming && _tcpStreamer != null)
+                    //{
+                    //    _tcpStreamer.sendDataTCP(data);
+                    //}
+                    //if (IsSaving && _dataSaver != null)
+                    //{
+                    //    stringToSave = id.ToString() + " " + Calibration[0] + " " + Calibration[1] + " " + Calibration[2] + " " + Calibration[3] + " " + quatW.ToString("0.0000") + " " + quatX.ToString("0.0000") + " " + quatY.ToString("0.0000") + " " + quatZ.ToString("0.0000") + " "
+                    //    + x_a.ToString("0.0000") + " " + y_a.ToString("0.0000") + " " + z_a.ToString("0.0000") + " " + gyrx.ToString("0.0000") + " " + gyry.ToString("0.0000") + " " + gyrz.ToString("0.0000");
+                    //    _dataSaver.addData(stringToSave);
+                    //}
                     //if (isPlotting)
                     //{
                     //    OnaccelerationData(x_a, y_a, z_a, gyrx, gyry, gyrz);
                     //}
                 }
-                catch(System.Exception e)
+                catch (System.Exception e)
                 {
                     Console.WriteLine(e.Message);
                 }
@@ -392,22 +332,22 @@ namespace BLE_Drive_UI.src
 
         private void BLEConnectionStatusChangedEvent(BluetoothLEDevice sender, object args)
         {
-            BLEDeviceInformation deviceInformation = null;
-            foreach (var dev in ConnectedDeviceInformationList)
-            {
-                if (dev.Name.Equals(sender.Name))
-                {
-                    deviceInformation = dev;
-                    break;
-                }
-            }
+            //BLEDeviceInformation device = null;
+            //foreach (var dev in ConnectedDeviceInformationList)
+            //{
+            //    if (dev.Name.Equals(sender.Name))
+            //    {
+            //        device = dev;
+            //        break;
+            //    }
+            //}
 
             //Console.WriteLine("Connection Status changed: " + sender.ConnectionStatus);
             var connected = sender.ConnectionStatus.ToString() == "Connected" ? true : false;
             OnStatusChanged(sender.ConnectionStatus.ToString() + " to " + sender.Name);
 
 
-            if(connected)
+            if (connected)
             {
 
             }
@@ -415,13 +355,12 @@ namespace BLE_Drive_UI.src
             {
                 for (int i = 0; i < 4; i++)
                 {
-                    Calibration[i] = "0";
+                    //Calibration[i] = "0";
                 }
-                ConnectedDeviceInformationList.Remove(deviceInformation);
             }
 
-            ConnectedChangedEventArgs  e = new ConnectedChangedEventArgs();
-            e.deviceInformation = deviceInformation;
+            ConnectedChangedEventArgs e = new ConnectedChangedEventArgs();
+            e.deviceInformation = DeviceInformation;
             e.status = connected;
             EventHandler<ConnectedChangedEventArgs> handler = ConnectedChanged;
             if (handler != null)
@@ -438,7 +377,7 @@ namespace BLE_Drive_UI.src
             statusChangedEventArgs e = new statusChangedEventArgs();
             e.Status = status;
             e.Timestamp = DateTime.Now;
-            
+            e.deviceInformation = DeviceInformation;
             EventHandler<statusChangedEventArgs> handler = StatusChanged;
             if (handler != null)
             {
@@ -458,37 +397,28 @@ namespace BLE_Drive_UI.src
         //    }
         //}
 
-        //protected virtual void OnaccelerationData(float x, float y, float z, float gx, float gy, float gz)
-        //{
-        //    imuDataEventArgs e = new imuDataEventArgs();
-        //    e.Accx = x;
-        //    e.Accy = y;
-        //    e.Accz = z;
-        //    e.Gyrx = gx;
-        //    e.Gyry = gy;
-        //    e.Gyrz = gz;
-        //    EventHandler<imuDataEventArgs> handler = UpdateChart;
-        //    if (handler != null)
-        //    {
-        //        handler(this, e);
-        //    }
-        //}
-
-        protected virtual void OnSelectedDeviceFound()
+        protected virtual void SendIMUData(int id, byte calib, float[] data ) //float quatW, float quatX, float quatY, float quatZ, float x, float y, float z, float gx, float gy, float gz)
         {
-            EventHandler handler = SelectedDeviceFound;
-            if(handler != null)
+            imuDataEventArgs e = new imuDataEventArgs();
+            e.id = id;
+            e.data = data;
+            e.calib = calib;
+            //e.quatW = quatW;
+            //e.quatX = quatX;
+            //e.quatY = quatY;
+            //e.quatZ = quatZ;
+            //e.Accx = x;
+            //e.Accy = y;
+            //e.Accz = z;
+            //e.Gyrx = gx;
+            //e.Gyry = gy;
+            //e.Gyrz = gz;
+            EventHandler<imuDataEventArgs> handler = sendData;
+            if (handler != null)
             {
-                handler(this,EventArgs.Empty);
+                handler(this, e);
             }
         }
 
-        private void TCPConnectionStatusChangedEvent(object sender, tcpConnectEventArgs e)
-        {
-            IsStreaming = e.connected;
-        }
     }
-
-
- 
 }

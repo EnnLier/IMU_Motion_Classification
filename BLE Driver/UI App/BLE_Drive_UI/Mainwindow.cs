@@ -19,8 +19,8 @@ namespace BLE_Drive_UI
     public partial class mw_form : Form
     {
         private BLEwatcher _BLEwatcher;
-        private BLEdriver _BLEdriver;
-
+        //private BLEdriver _BLEdriver;
+        private BLEhub _BLEhub;
         private static int _maxNumOfChartValues = 200;
         private int _currentChartValue = 0;
 
@@ -37,9 +37,10 @@ namespace BLE_Drive_UI
         public mw_form()
         {
             _BLEwatcher = new BLEwatcher();
-            _BLEdriver = new BLEdriver();
-            _BLEdriver.StatusChanged += BLEdriver_StatusChanged;
-            _BLEdriver.ConnectedChanged += BLEDriver_ConnectedChanged;
+            //_BLEdriver = new BLEdriver();
+            _BLEhub = new BLEhub();
+            _BLEhub.StatusChanged += BLEdriver_StatusChanged;
+            _BLEhub.ConnectedChanged += BLEDriver_ConnectedChanged;
             //_BLEdriver.ChangeLabel += Form_ChangeLabel;
             InitializeComponent();
 
@@ -68,7 +69,7 @@ namespace BLE_Drive_UI
         private void BLEDriver_ConnectedChanged(object sender, ConnectedChangedEventArgs args)
         {   
             var connected = args.status;
-            var device = args.device;
+            var deviceInformation = args.deviceInformation;
             //Check if Controls need to be invoked to enable or disable them and act accordingly
             var i = b_recalibrate.InvokeRequired == true ? b_recalibrate.Invoke((Action)(() => this.b_recalibrate.Enabled = connected ? true : false)) : this.b_recalibrate.Enabled = connected ? true : false;
             i = cb_plotAcc.InvokeRequired == true ? cb_plotAcc.Invoke((Action)(() => this.cb_plotAcc.Enabled = connected ? true : false)) : this.cb_plotAcc.Enabled = connected ? true : false;
@@ -112,21 +113,25 @@ namespace BLE_Drive_UI
 
         private void update_battery(object sender, System.EventArgs e)
         {
-            var level = _BLEdriver.BatteryLevel;
-            l_batteryLabel.Text = level.ToString() + "%";
-            p_BatteryPanel.Width = level;
-            if (level <= 30 && level > 10)
+            foreach (var device in _BLEhub.ConnectedDeviceList)
             {
-                p_BatteryPanel.BackColor = Color.FromArgb(255, 127, 0);
+                var level = device.BatteryLevel;
+                l_batteryLabel.Text = level.ToString() + "%";
+                p_BatteryPanel.Width = level;
+                if (level <= 30 && level > 10)
+                {
+                    p_BatteryPanel.BackColor = Color.FromArgb(255, 127, 0);
+                }
+                else if (level <= 10)
+                {
+                    p_BatteryPanel.BackColor = Color.FromArgb(255, 0, 0);
+                }
+                else
+                {
+                    p_BatteryPanel.BackColor = Color.FromArgb(0, 127, 0);
+                }
             }
-            else if (level <= 10)
-            {
-                p_BatteryPanel.BackColor = Color.FromArgb(255, 0, 0);
-            }
-            else
-            {
-                p_BatteryPanel.BackColor = Color.FromArgb(0, 127, 0);
-            }
+            
             
         }
 
@@ -140,7 +145,7 @@ namespace BLE_Drive_UI
             this.lv_Device_List.Items.Clear();
             lock(_BLEwatcher.mListLock)
             {
-                foreach (BLEdevice device in _BLEwatcher.deviceList)
+                foreach (BLEDeviceInformation device in _BLEwatcher.deviceList)
                 {
                     if (String.IsNullOrEmpty(device.Name)) continue;
                     var row = new String[] { device.Name, device.Id, device.canPair.ToString() };
@@ -156,19 +161,19 @@ namespace BLE_Drive_UI
         {
             try
             {
-                if(_BLEdriver.Busy) return;
+                if(_BLEhub.Busy) return;
                 if(pb_connect_front.Text == "Connect Front")
                 {
-                    var selectedDevice = (BLEdevice)this.lv_Device_List.SelectedItems[0].Tag;
+                    var selectedDevice = (BLEDeviceInformation)this.lv_Device_List.SelectedItems[0].Tag;
                     selectedDevice.isFront = true;
-                    if (_BLEdriver != null)
+                    if (_BLEhub != null)
                     {
-                        _BLEdriver.ConnectDevice(selectedDevice);
+                        _BLEhub.ConnectDevice(selectedDevice);
                     }
                 }
                 else if(pb_connect_front.Text == "Disconnect")
                 {
-                    _BLEdriver.Disconnect();
+                    _BLEhub.Disconnect();
                 }
                 //pb_connect.Enabled = false;
             }
@@ -182,19 +187,19 @@ namespace BLE_Drive_UI
         {
             try
             {
-                if (_BLEdriver.Busy) return;
+                if (_BLEhub.Busy) return;
                 if (pb_connect_back.Text == "Connect Back")
                 {
-                    var selectedDevice = (BLEdevice)this.lv_Device_List.SelectedItems[0].Tag;
+                    var selectedDevice = (BLEDeviceInformation)this.lv_Device_List.SelectedItems[0].Tag;
                     selectedDevice.isFront = false;
-                    if (_BLEdriver != null)
+                    if (_BLEhub != null)
                     {
-                        _BLEdriver.ConnectDevice(selectedDevice);
+                        _BLEhub.ConnectDevice(selectedDevice);
                     }
                 }
                 else if (pb_connect_back.Text == "Disconnect")
                 {
-                    _BLEdriver.Disconnect();
+                    _BLEhub.Disconnect();
                 }
                 //pb_connect.Enabled = false;
             }
@@ -206,11 +211,14 @@ namespace BLE_Drive_UI
 
         private void update_calibLabel(object sender, EventArgs e)
         {
-            var calib = _BLEdriver.Calibration;
-            l_sys.Text = calib[0];
-            l_gyr.Text = calib[1];
-            l_acc.Text = calib[2];
-            l_mag.Text = calib[3];
+            var calib = _BLEhub.Calibration;
+            if (calib[0] != null)
+            {
+                l_sys.Text = calib[0][0].ToString();
+                l_gyr.Text = calib[0][1].ToString();
+                l_acc.Text = calib[0][2].ToString();
+                l_mag.Text = calib[0][3].ToString();
+            }
         }
 
         private void BLEdriver_StatusChanged(object sender, statusChangedEventArgs e)
@@ -244,12 +252,12 @@ namespace BLE_Drive_UI
         private void cb_StreamTCP_CheckedChanged(object sender, EventArgs e)
         {
             if (this.cb_StreamTCP.Checked)
-            { 
-                _BLEdriver.StartStreaming();
+            {
+                _BLEhub.StartStreaming();
             } 
             else
             {
-                _BLEdriver.StopStreaming();
+                _BLEhub.StopStreaming();
             }
         }
 
@@ -292,19 +300,19 @@ namespace BLE_Drive_UI
         {
             if (this.cb_SaveToFile.Checked)
             {
-                _BLEdriver.StartSaving();
+                _BLEhub.StartSaving();
             }
             else
             {
-                _BLEdriver.StopSaving();
+                _BLEhub.StopSaving();
             }
         }
 
 
         private void b_recalibrate_Click(object sender, EventArgs e)
         {
-            var selectedDevice = (BLEdevice)this.lv_Device_List.SelectedItems[0].Tag;
-            _BLEdriver.Recalibrate_imu(selectedDevice);
+            var selectedDevice = (BLEDeviceInformation)this.lv_Device_List.SelectedItems[0].Tag;
+            _BLEhub.Recalibrate_imu(selectedDevice);
         }
 
         private void mw_form_Load(object sender, EventArgs e)
@@ -507,7 +515,7 @@ namespace BLE_Drive_UI
             {
                 //ch_dataPlot.Invoke((Action)delegate
                 //{var data = _BLEdriver.GetDataToPlot();
-                var data = _BLEdriver.GetDataToPlot();
+                var data = _BLEhub.GetDataToPlot();
                 ch_dataPlot.Series[0].Points.AddXY(_currentChartValue, data[0]);
                 ch_dataPlot.Series[1].Points.AddXY(_currentChartValue, data[1]);
                 ch_dataPlot.Series[2].Points.AddXY(_currentChartValue, data[2]);

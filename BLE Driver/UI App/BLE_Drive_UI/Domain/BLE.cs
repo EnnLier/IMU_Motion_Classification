@@ -10,9 +10,9 @@ using BLE_Drive_UI.Domain;
 namespace BLE_Drive_UI.Domain
 {
 
-    public class BLEdevice
+    public class BLEDeviceInformation
     {
-        public BLEdevice(String name, String id, bool canpair)
+        public BLEDeviceInformation(String name, String id, bool canpair)
         {
             Name = name;
             Id = id;
