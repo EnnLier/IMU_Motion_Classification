@@ -10,12 +10,12 @@ using BLE_Drive_UI.Domain;
 namespace BLE_Drive_UI.Domain
 {
 
-    public class BLEDeviceInformation
+    public class BLEDeviceInformation : Object
     {
         public BLEDeviceInformation(String name, String id, bool canpair)
         {
             Name = name;
-            Id = id;
+            BLEId = id;
             canPair = canpair;
         //Service = new Guid();
         //HandlesOfCharacteristicsOfService = new Dictionary<Guid,Dictionary<Guid, ushort>>();
@@ -36,17 +36,23 @@ namespace BLE_Drive_UI.Domain
         //        }
         //        toRet += "Service " + i + ": " + serviceCharacterHandles.Key.ToString() + "\t" + charHandles + "\t";
         //        //toRet = string.Format("Charachteristic {0} = {1}, Value = {2} \t",i, characterHandles.Key, handles);
-        //        i++;
+        //        i++; 
         //    }
         //    return toRet;
         //}
-        public bool isFront { get; set;}
+        //public bool isFront { get; set }
+        public int SensorID { get; set;}
         public String Name { get; }
-        public String Id { get; }
+        public String BLEId { get; }
         public bool canPair { get; }
         public GattCharacteristic BatteryCharacteristic { get; set; }
         public GattCharacteristic BLEuartCharacteristic { get; set; }
         public GattCharacteristic BLEuartCharacteristic_write { get; set; }
+
+        public BLEDeviceInformation Clone()
+        {
+            return (BLEDeviceInformation)this.MemberwiseClone();
+        }
         //public Guid Service { get;set;}
         //public Dictionary<Guid,Dictionary<Guid,ushort>> HandlesOfCharacteristicsOfService { get;set;}
 

@@ -43,7 +43,7 @@ void setup()
   blebas.setUuid(bat_uuid);
   blebas.begin();
 
-  dataTimer.begin(5,SendData,0,true);
+  dataTimer.begin(10,SendData,0,true);
 
   Serial.println("Advertising");
   advertise();
@@ -90,19 +90,19 @@ void onDisconnect(uint16_t conn_handle, uint8_t reason)
   Serial.print("Disconnected, reason = 0x"); Serial.println(reason, HEX);
 }
 
-char data[22] = {0x01,'0','0','0','1','0','1','2','0','0','1','0','1','2','0','0','1','0','1','2'};
-char dataToSend[22] = {'A','0','0','0','1','0','1','2','0','0','1','0','1','2','0','0','1','0','1','2'};
+char data[21] = {0x01,'0','0','0','1','0','1','2','0','0','1','0','1','2','0','0','1','0','1'};
+char dataToSend[21] = {'A','0','0','0','1','0','1','2','0','0','1','0','1','2','0','0','1','0','1'};
 
 void loop() 
 {
   // Serial.println("tic..");
 
-  for(int i = 0; i < 22; i++)
+  for(int i = 0; i < 21; i++)
   {
     data[i] = (char)(rand() % 10);
   } 
-  data[0] = 0x01;
-  memcpy(&dataToSend,&data,22);
+  data[0] = 0;
+  memcpy(&dataToSend,&data,21);
   
   delay(5);
 }
@@ -129,7 +129,7 @@ void bleuart_rx_callback(uint16_t conn_hdl)
 void SendData(TimerHandle_t handle)
 { 
   // Serial.println(dataToSend);
-  bleuart.write(dataToSend,22);
+  bleuart.write(dataToSend,21);
   digitalToggle(LED_RED);
 }
 

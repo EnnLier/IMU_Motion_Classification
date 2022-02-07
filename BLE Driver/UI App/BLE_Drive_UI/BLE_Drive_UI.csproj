@@ -59,7 +59,6 @@
     <Compile Include="Domain\BLE.cs" />
     <Compile Include="Domain\DataHandling.cs" />
     <Compile Include="src\BLEDevice.cs" />
-    <Compile Include="src\BLEdriver.cs" />
     <Compile Include="src\BLEhub.cs" />
     <Compile Include="src\BLEwatcher.cs" />
     <Compile Include="Mainwindow.cs">

@@ -140,6 +140,22 @@ namespace BLE_Drive_UI.Domain
             Active = false;
         }
 
+        public void addData(int id, float[] data)
+        {
+            String stringToSave = id.ToString();
+            foreach(var value in data)
+            {
+                stringToSave += value.ToString("0.0000");
+                //for (int i = 0; i < value.Length ; i++)
+                //{
+                //    Console.WriteLine(i);
+                //    stringToSave += value[i].ToString("0.0000");
+                //}
+                    
+            }
+            addData(stringToSave);
+        }
+
         public void addData(String data)
         {
             lock (mThreadLock)
@@ -163,6 +179,7 @@ namespace BLE_Drive_UI.Domain
                     lock (mThreadLock)
                     {
                         buffer1.Add(timestamp + dataToSave);
+                        Console.WriteLine(buffer1.Count);
                     }
                     if (buffer1.Count >= _bufferLength)
                     {

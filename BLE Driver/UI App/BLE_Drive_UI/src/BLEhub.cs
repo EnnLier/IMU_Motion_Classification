@@ -36,6 +36,13 @@ namespace BLE_Drive_UI.src
         public bool IsSaving { get; private set; }
         public bool IsStreaming { get; private set; }
         public bool Busy { get; private set; }
+        public int Connected 
+        {
+            get
+            {
+                return ConnectedDeviceList.Count;
+            }
+        }
 
         private SyncDataSaver _dataSaver;
         private TCPStreamer _tcpStreamer;
@@ -47,9 +54,11 @@ namespace BLE_Drive_UI.src
         //private static UInt16 _datapoints = 6;              //to Plot
         private static UInt16 _writeBuffersize = 200;
         private static UInt16 _writeBufferRate = 10;
+        private static UInt16 _dataLength = 10;
+        private static UInt16 _numOfDevices = 2;
 
-        public int[][] Calibration = new int[2][];
-        public float[][] IMUdata = new float[2][];
+        //public int[][] Calibration = new int[2][];
+        public float[] IMUdata = new float[_numOfDevices * _dataLength];
 
 
         ~BLEhub()
@@ -60,7 +69,7 @@ namespace BLE_Drive_UI.src
                 StopStreaming();
         }
 
-        public float[][] GetDataToPlot()
+        public float[] GetDataToPlot()
         {
             lock (m_DataLock)
             {
@@ -98,22 +107,40 @@ namespace BLE_Drive_UI.src
             }
         }
 
-        public void Disconnect()
+        public void Disconnect(BLEDeviceInformation deviceInformation)
         {
-            foreach (var device in ConnectedDeviceList)
+            //Console.WriteLine("Disconnecting from ID: " + sensorID);
+            foreach (BLEDevice device in ConnectedDeviceList)
             {
-                try
+                //Console.WriteLine("Device ID: " + device.DeviceInformation.SensorID);
+                if (device.DeviceInformation.SensorID == deviceInformation.SensorID)
                 {
-                    device.Disconnect();
-                    ConnectedDeviceList.Remove(device);
+                    //Console.WriteLine("Device found ID: " + sensorID);
+                    Disconnect(device);
+                    return;
                 }
-                catch (System.UnauthorizedAccessException e)
-                {
-                    Console.WriteLine(e.Message);
-                    Console.WriteLine("Retrying...");
-                    Thread.Sleep(300);
-                    device.Disconnect();
-                }
+            }
+            
+        }
+
+        public void Disconnect(BLEDevice device)
+        {
+            try
+            {
+                Busy = true;
+                device.Disconnect();
+                //ConnectedDeviceList.Remove(device);
+            }
+            catch (System.UnauthorizedAccessException e)
+            {
+                Console.WriteLine(e.Message);
+                Console.WriteLine("Retrying...");
+                Thread.Sleep(300);
+                device.Disconnect();
+            }
+            finally
+            {
+                Busy = false;
             }
         }
 
@@ -136,44 +163,80 @@ namespace BLE_Drive_UI.src
         public void ConnectDevice(BLEDeviceInformation deviceInformation)
         {
             Busy = true;
+            foreach(var dev in ConnectedDeviceList)
+            {
+                Console.WriteLine(dev.DeviceInformation.SensorID);
+                if (dev.DeviceInformation.BLEId == deviceInformation.BLEId)
+                {
+                    Console.WriteLine("Device Already connected");
+                    Busy = false;
+                    return;
+                }
+                
+            }
             BLEDevice device = new BLEDevice();
-            device.ConnectDevice(deviceInformation);
-            ConnectedDeviceList.Add(device);
-            device.sendData += OnIMUData;
-            device.ConnectedChanged += ConnectedChanged;
-            device.StatusChanged += StatusChanged;
-            Busy = false;
+            device.Connect(deviceInformation);
+            device.ConnectedChanged += OnConnectionChanged;
         }
 
-
-        //protected virtual void OnSelectedDeviceFound()
-        //{
-        //    EventHandler handler = SelectedDeviceFound;
-        //    if (handler != null)
-        //    {
-        //        handler(this, EventArgs.Empty);
-        //    }
-        //}
 
         private void TCPConnectionStatusChangedEvent(object sender, tcpConnectEventArgs e)
         {
             IsStreaming = e.connected;
         }
 
-        private void OnIMUData(object sender, imuDataEventArgs e)
+        protected virtual void OnConnectionChanged(object sender, ConnectedChangedEventArgs e)
+        {
+            var device = (BLEDevice)sender;
+            var connected = e.status;
+
+            if (connected)
+            {
+                if (!ConnectedDeviceList.Contains(device))
+                {
+                    ConnectedDeviceList.Add(device);
+                    device.sendData += OnIMUData;
+                    device.StatusChanged += StatusChanged;
+                    Busy = false;
+                }
+                else
+                {
+                    Busy = false;
+                    return;
+                }
+            }
+            else
+            {
+                device.ConnectedChanged -= OnConnectionChanged;
+                device.StatusChanged -= StatusChanged;
+                device.sendData -= OnIMUData;
+                ConnectedDeviceList.Remove(device);
+                device = null;
+            }
+            EventHandler<ConnectedChangedEventArgs> handler = ConnectedChanged;
+            if (handler != null)
+            {
+                handler(this, e);
+            }
+        }
+
+        protected virtual void OnIMUData(object sender, imuDataEventArgs e)
         {
             //Console.WriteLine(e.id);
+            var device = (BLEDevice)sender;
+            var id = device.DeviceInformation.SensorID;
             lock(m_DataLock)
             {
-                if(IMUdata != null)
-                    IMUdata[e.id] = e.data;
-                if(Calibration != null)
+                //if(IMUdata != null)
+                //{
+                //IMUdata[id] = e.data;
+                if (IsSaving)
                 {
-                    Calibration[e.id] = new int[] { (e.calib >> 6) & 0x03, (e.calib >> 4) & 0x03, (e.calib >> 2) & 0x03, (e.calib) & 0x03 }; ;
+                    _dataSaver.addData(id, e.data);
                 }
-
+                //}
+                
             }
-
         }
     }
 }

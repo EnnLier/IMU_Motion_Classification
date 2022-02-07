@@ -65,7 +65,7 @@ namespace BLE_Drive_UI.src
             {
                 foreach (BLEDeviceInformation dev in deviceList)
                 {
-                    if (args.Id.Equals(dev.Id))
+                    if (args.Id.Equals(dev.BLEId))
                     {
                         deviceList.Remove(dev);
                         return;
@@ -94,7 +94,7 @@ namespace BLE_Drive_UI.src
             {
                 foreach(BLEDeviceInformation dev in deviceList)
                 {
-                    if (device.Id.Equals(dev.Id))
+                    if (device.BLEId.Equals(dev.BLEId))
                     {
                         return;
                     }

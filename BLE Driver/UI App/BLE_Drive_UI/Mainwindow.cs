@@ -30,9 +30,16 @@ namespace BLE_Drive_UI
         private System.Windows.Forms.Timer PlotDataTimer = new System.Windows.Forms.Timer();
         private System.Windows.Forms.Timer UpdateBatteryTimer = new System.Windows.Forms.Timer();
         private System.Windows.Forms.Timer UpdateCalibrationLabelTimer = new System.Windows.Forms.Timer();
-        //private System.Threading.Thread PlotDataThread;
-        //private BackgroundWorker PlotDataBackgroundWorker;
 
+        private List<Chart> _ChartList;
+        private List<System.Windows.Forms.Label> _CalibLabelList;
+        private List<System.Windows.Forms.Panel> _BatteryPanelList;
+        private List<System.Windows.Forms.Label> _BatteryLabelList;
+        private List<System.Windows.Forms.Button> _ButtonList;
+
+        private List<Control> _FrontDeviceControlList;
+        private List<Control> _BackDeviceControlList;
+        private List<List<Control>> _DeviceControlList;
 
         public mw_form()
         {
@@ -48,65 +55,101 @@ namespace BLE_Drive_UI
             cb_StreamTCP.Enabled = false;
             cb_plotAcc.Enabled = false;
             b_recalibrate.Enabled = false;
-            p_BatteryPanel.Enabled = false;
+            p_frontBatteryPanel.Enabled = false;
+            //p_frontCalibPanel.Visible = false;
+            //p_backCalibPanel.Visible = false;
+            //ch_frontDataPlot.Visible = false;
+            //ch_backDataPlot.Visible = false;
+            //p_backBatteryPanel.Visible = false;
+            //p_frontBatteryPanel.Visible = false;
+            //l_batteryLabelBack.Visible = false;
+            //l_batteryLabelFront.Visible = false;
 
+            _ChartList = new List<Chart>() { ch_frontDataPlot, ch_backDataPlot };
+            _CalibLabelList = new List<System.Windows.Forms.Label>() { l_sysFront, l_gyrFront, l_accFront, l_magFront, l_sysBack, l_gyrBack, l_accBack, l_magBack};
+            _BatteryPanelList = new List<System.Windows.Forms.Panel>() { p_frontBatteryPanel, p_backBatteryPanel };
+            _ButtonList = new List<System.Windows.Forms.Button>() { pb_frontConnect, pb_backConnect };
+            _BatteryLabelList = new List<Label> {l_batteryLabelFront, l_batteryLabelBack };
+            _FrontDeviceControlList = new List<Control>() { ch_frontDataPlot, p_frontCalibPanel, p_frontBatteryPanel, l_batteryLabelFront };
+            _BackDeviceControlList = new List<Control>() { ch_backDataPlot, p_backCalibPanel, p_backBatteryPanel, l_batteryLabelBack };
+            _DeviceControlList = new List<List<Control>>() { _FrontDeviceControlList, _BackDeviceControlList };
+
+            foreach (var List in _DeviceControlList)
+            {
+                foreach ( var control in List)
+                {
+                    control.Enabled = false;
+                    control.Visible = false;
+                }
+            }
             PlotDataTimer.Tick += new EventHandler(update_dataChart);
             PlotDataTimer.Interval = 25;
             PlotDataTimer.Enabled = false;
 
             UpdateBatteryTimer.Tick += new EventHandler(update_battery);
             UpdateBatteryTimer.Interval = 500;
-            //UpdateBatteryTimer.Enabled = false;
 
             UpdateCalibrationLabelTimer.Tick += new EventHandler(update_calibLabel);
             UpdateCalibrationLabelTimer.Interval = 500;
-            //UpdateCalibrationLabelTimer.Enabled = false;
 
-            initialize_dataChart();
+            initialize_dataChart(this.ch_frontDataPlot);
+            initialize_dataChart(this.ch_backDataPlot);
         }
 
 
         private void BLEDriver_ConnectedChanged(object sender, ConnectedChangedEventArgs args)
-        {   
+        {
+            //pb_Refresh_List.BeginInvoke((Action)(() => pb_Refresh_List_Click(null,null)));
             var connected = args.status;
-            var deviceInformation = args.deviceInformation;
+            var id = args.deviceInformation.SensorID;
+            //Console.WriteLine(args.deviceInformation.SensorID);
             //Check if Controls need to be invoked to enable or disable them and act accordingly
-            var i = b_recalibrate.InvokeRequired == true ? b_recalibrate.Invoke((Action)(() => this.b_recalibrate.Enabled = connected ? true : false)) : this.b_recalibrate.Enabled = connected ? true : false;
-            i = cb_plotAcc.InvokeRequired == true ? cb_plotAcc.Invoke((Action)(() => this.cb_plotAcc.Enabled = connected ? true : false)) : this.cb_plotAcc.Enabled = connected ? true : false;
-            i = p_BatteryPanel.InvokeRequired == true ? p_BatteryPanel.Invoke((Action)(() => this.p_BatteryPanel.Enabled = connected ? true : false)) : this.p_BatteryPanel.Enabled = connected ? true : false;
-            i = cb_SaveToFile.InvokeRequired == true ? cb_SaveToFile.Invoke((Action)(() => this.cb_SaveToFile.Enabled = connected ? true : false)) : this.cb_SaveToFile.Enabled = connected ? true : false;
-            i = cb_StreamTCP.InvokeRequired == true ? cb_StreamTCP.Invoke((Action)(() => this.cb_StreamTCP.Enabled = connected ? true : false)) : this.cb_StreamTCP.Enabled = connected ? true : false;
-
-            //if (b_recalibrate.InvokeRequired)
-            //{
-            //    //b_recalibrate.Invoke((Action)(() => this.b_recalibrate.Enabled = connected ? true : false));
-            //    //cb_plotAcc.Invoke((Action)(() => this.cb_plotAcc.Enabled = connected ? true : false));
-            //    //p_BatteryPanel.Invoke((Action)(() => this.p_BatteryPanel.Enabled = connected ? true : false));
-            //    //cb_SaveToFile.Invoke((Action)(() => this.cb_SaveToFile.Enabled = connected ? true : false));
-            //    //cb_StreamTCP.Invoke((Action)(() => this.cb_StreamTCP.Enabled = connected ? true : false));
-            //}
-            //else
-            //{
-            //    //this.b_recalibrate.Enabled = connected ? true : false;
-            //    //this.cb_plotAcc.Enabled = connected ? true : false;
-            //    //this.p_BatteryPanel.Enabled = connected ? true : false;
-            //    //this.cb_SaveToFile.Enabled = connected ? true : false;
-            //    this.cb_StreamTCP.Enabled = connected ? true : false;
-            //}
-
-            if (connected)
+            //var i = b_recalibrate.InvokeRequired == true ? b_recalibrate.Invoke((Action)(() => this.b_recalibrate.Enabled = connected ? true : false)) : this.b_recalibrate.Enabled = connected ? true : false;
+            //i = cb_plotAcc.InvokeRequired == true ? cb_plotAcc.Invoke((Action)(() => this.cb_plotAcc.Enabled = connected ? true : false)) : this.cb_plotAcc.Enabled = connected ? true : false;
+            //i = p_frontBatteryPanel.InvokeRequired == true ? p_frontBatteryPanel.Invoke((Action)(() => this.p_frontBatteryPanel.Enabled = connected ? true : false)) : this.p_frontBatteryPanel.Enabled = connected ? true : false;
+            //i = cb_SaveToFile.InvokeRequired == true ? cb_SaveToFile.Invoke((Action)(() => this.cb_SaveToFile.Enabled = connected ? true : false)) : this.cb_SaveToFile.Enabled = connected ? true : false;
+            //i = cb_StreamTCP.InvokeRequired == true ? cb_StreamTCP.Invoke((Action)(() => this.cb_StreamTCP.Enabled = connected ? true : false)) : this.cb_StreamTCP.Enabled = connected ? true : false;
+            Console.WriteLine("Connected devices: " + _BLEhub.Connected);
+            _ButtonList[id].Invoke((Action)delegate
             {
-                pb_connect_front.BeginInvoke((Action)(() => this.pb_connect_front.Text = "Disconnect"));
-                p_BatteryPanel.BeginInvoke((Action)(() => update_battery(null, null)));
-                p_BatteryPanel.BeginInvoke((Action)(() => this.UpdateBatteryTimer.Start()));
-                l_sys.BeginInvoke((Action)(() => this.UpdateCalibrationLabelTimer.Start()));
+                foreach (var control in _DeviceControlList[id])
+                {
+                    control.Enabled = connected;
+                    control.Visible = connected;
+                }
+            });
+            if (_BLEhub.Connected == 0) //All devices disconnected
+            {
+                _BatteryPanelList[id].BeginInvoke((Action)(() => this.UpdateBatteryTimer.Stop()));
+                _CalibLabelList[id].BeginInvoke((Action)(() => this.UpdateCalibrationLabelTimer.Stop()));
+                _ChartList[id].BeginInvoke((Action)(() => this.PlotDataTimer.Stop()));
+                b_recalibrate.Invoke((Action)(() => this.b_recalibrate.Enabled = false));
+                p_frontBatteryPanel.Invoke((Action)(() => this.p_frontBatteryPanel.Enabled = false));
+                cb_plotAcc.Invoke((Action)(() => this.cb_plotAcc.Enabled = false));
+                cb_plotAcc.Invoke((Action)(() => this.cb_plotAcc.Checked = false));
+                cb_SaveToFile.Invoke((Action)(() => this.cb_SaveToFile.Enabled = false));
+                cb_SaveToFile.Invoke((Action)(() => this.cb_SaveToFile.Checked = false));
+                cb_StreamTCP.Invoke((Action)(() => this.cb_StreamTCP.Enabled = false));
+                cb_StreamTCP.Invoke((Action)(() => this.cb_StreamTCP.Checked = false));
             }
             else
             {
-                pb_connect_front.BeginInvoke((Action)(() => this.pb_connect_front.Text = "Connect Front"));
-                pb_connect_back.BeginInvoke((Action)(() => this.pb_connect_back.Text = "Connect Back"));
-                p_BatteryPanel.BeginInvoke((Action)(() => this.UpdateBatteryTimer.Stop()));
-                l_sys.BeginInvoke((Action)(() => this.UpdateCalibrationLabelTimer.Stop()));
+                b_recalibrate.Invoke((Action)(() => this.b_recalibrate.Enabled = true));
+                cb_plotAcc.Invoke((Action)(() => this.cb_plotAcc.Enabled = true));
+                cb_SaveToFile.Invoke((Action)(() => this.cb_SaveToFile.Enabled = true));
+                cb_StreamTCP.Invoke((Action)(() => this.cb_StreamTCP.Enabled = true));
+            }
+            if (connected)
+            {
+                _ButtonList[id].BeginInvoke((Action)(() => _ButtonList[id].Text = _ButtonList[id].Text.Replace("Connect","Disconnect")));
+                //_BatteryPanelList[deviceInformation.SensorID].BeginInvoke((Action)(() => update_battery(null, null)));
+                _BatteryPanelList[id].BeginInvoke((Action)(() => this.UpdateBatteryTimer.Start()));
+                _CalibLabelList[id].BeginInvoke((Action)(() => this.UpdateCalibrationLabelTimer.Start()));
+
+            }
+            else
+            {
+                _ButtonList[id].BeginInvoke((Action)(() => _ButtonList[id].Text = _ButtonList[id].Text.Replace("Disconnect", "Connect")));
             }
         }
 
@@ -116,19 +159,21 @@ namespace BLE_Drive_UI
             foreach (var device in _BLEhub.ConnectedDeviceList)
             {
                 var level = device.BatteryLevel;
-                l_batteryLabel.Text = level.ToString() + "%";
-                p_BatteryPanel.Width = level;
+                var id = device.DeviceInformation.SensorID;
+
+                _BatteryLabelList[id].Text = level.ToString() + "%";
+                _BatteryPanelList[id].Width = level;
                 if (level <= 30 && level > 10)
                 {
-                    p_BatteryPanel.BackColor = Color.FromArgb(255, 127, 0);
+                    _BatteryPanelList[id].BackColor = Color.FromArgb(255, 127, 0);
                 }
                 else if (level <= 10)
                 {
-                    p_BatteryPanel.BackColor = Color.FromArgb(255, 0, 0);
+                    _BatteryPanelList[id].BackColor = Color.FromArgb(255, 0, 0);
                 }
                 else
                 {
-                    p_BatteryPanel.BackColor = Color.FromArgb(0, 127, 0);
+                    _BatteryPanelList[id].BackColor = Color.FromArgb(0, 127, 0);
                 }
             }
             
@@ -148,7 +193,7 @@ namespace BLE_Drive_UI
                 foreach (BLEDeviceInformation device in _BLEwatcher.deviceList)
                 {
                     if (String.IsNullOrEmpty(device.Name)) continue;
-                    var row = new String[] { device.Name, device.Id, device.canPair.ToString() };
+                    var row = new String[] { device.Name, device.BLEId, device.canPair.ToString() };
                     ListViewItem item = new ListViewItem(row);
                     item.Tag = device;
                     this.lv_Device_List.Items.Add(item);
@@ -157,49 +202,32 @@ namespace BLE_Drive_UI
             
         }
 
-        private void pb_connect_front_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                if(_BLEhub.Busy) return;
-                if(pb_connect_front.Text == "Connect Front")
-                {
-                    var selectedDevice = (BLEDeviceInformation)this.lv_Device_List.SelectedItems[0].Tag;
-                    selectedDevice.isFront = true;
-                    if (_BLEhub != null)
-                    {
-                        _BLEhub.ConnectDevice(selectedDevice);
-                    }
-                }
-                else if(pb_connect_front.Text == "Disconnect")
-                {
-                    _BLEhub.Disconnect();
-                }
-                //pb_connect.Enabled = false;
-            }
-            catch(System.ArgumentOutOfRangeException)
-            {
-                Console.WriteLine("Nothing Highlighted");
-            }
-        }
-
-        private void pb_connect_back_Click(object sender, EventArgs e)
+        private void pb_connect_Click(object sender, EventArgs e)
         {
             try
             {
                 if (_BLEhub.Busy) return;
-                if (pb_connect_back.Text == "Connect Back")
+                //var button = (Button)sender;
+                var id = _ButtonList.IndexOf((Button)sender);
+                
+                var selection = (BLEDeviceInformation)this.lv_Device_List.SelectedItems[0].Tag;
+
+                //Make shallow copy of object to not change device_list entries on connect
+                BLEDeviceInformation selectedDevice = selection.Clone();
+
+                if (_ButtonList[id].Text.Contains("Connect "))
                 {
-                    var selectedDevice = (BLEDeviceInformation)this.lv_Device_List.SelectedItems[0].Tag;
-                    selectedDevice.isFront = false;
+                    selectedDevice.SensorID = id;
+
                     if (_BLEhub != null)
                     {
                         _BLEhub.ConnectDevice(selectedDevice);
                     }
+                    //initialize_dataChart(_ChartList[id]);
                 }
-                else if (pb_connect_back.Text == "Disconnect")
+                else if (_ButtonList[id].Text.Contains( "Disconnect"))
                 {
-                    _BLEhub.Disconnect();
+                    _BLEhub.Disconnect(selectedDevice);
                 }
                 //pb_connect.Enabled = false;
             }
@@ -209,16 +237,21 @@ namespace BLE_Drive_UI
             }
         }
 
+
         private void update_calibLabel(object sender, EventArgs e)
         {
-            var calib = _BLEhub.Calibration;
-            if (calib[0] != null)
+            foreach (var device in _BLEhub.ConnectedDeviceList)
             {
-                l_sys.Text = calib[0][0].ToString();
-                l_gyr.Text = calib[0][1].ToString();
-                l_acc.Text = calib[0][2].ToString();
-                l_mag.Text = calib[0][3].ToString();
+                var calib = device.Calibration;
+                
+                var id = device.DeviceInformation.SensorID;
+
+                _CalibLabelList[4 * id + 0].Text = calib[0].ToString();
+                _CalibLabelList[4 * id + 1].Text = calib[1].ToString();
+                _CalibLabelList[4 * id + 2].Text = calib[2].ToString();
+                _CalibLabelList[4 * id + 3].Text = calib[3].ToString();
             }
+            
         }
 
         private void BLEdriver_StatusChanged(object sender, statusChangedEventArgs e)
@@ -265,30 +298,19 @@ namespace BLE_Drive_UI
         {
             if (this.cb_plotAcc.Checked)
             {
-                _currentChartValue = 0;
-                ch_dataPlot.Series[0].Points.Clear();
-                ch_dataPlot.Series[1].Points.Clear();
-                ch_dataPlot.Series[2].Points.Clear();
-                ch_dataPlot.Series[3].Points.Clear();
-                ch_dataPlot.Series[4].Points.Clear();
-                ch_dataPlot.Series[5].Points.Clear();
-
-                //_plotting = true;
-                //PlotDataBackgroundWorker = new BackgroundWorker();
-                //PlotDataBackgroundWorker.DoWork += PlotData;
-                //PlotDataBackgroundWorker.ProgressChanged += PlotData_ProgressChanged;
-                //PlotDataBackgroundWorker.WorkerReportsProgress = true;
-                //PlotDataBackgroundWorker.WorkerSupportsCancellation = true;
-                //PlotDataBackgroundWorker.RunWorkerAsync();
-
+                foreach (var device in _BLEhub.ConnectedDeviceList)
+                {
+                    var id = device.DeviceInformation.SensorID;
+                    _currentChartValue = 0;
+                    _ChartList[id].Series[0].Points.Clear();
+                    _ChartList[id].Series[1].Points.Clear();
+                    _ChartList[id].Series[2].Points.Clear();
+                }
                 PlotDataTimer.Enabled = true;
                 this.PlotDataTimer.Start();
-                //watch.Start();
             }
             else
             {
-                //_plotting = false;
-                //PlotDataBackgroundWorker.CancelAsync();
                 PlotDataTimer.Enabled = false;
                 this.PlotDataTimer.Stop();
 
@@ -320,72 +342,42 @@ namespace BLE_Drive_UI
 
         }
 
-        private void initialize_dataChart()
+        private void initialize_dataChart(Chart chart)
         {
-            
-            this.ch_dataPlot.Series.Clear();
+            chart.Series.Clear();
 
-            //ch_AccPlot.ChartType = SeriesChartType.Spline;
+            var chartAreaAccX = chart.ChartAreas.Add("CaAccX");
+            var chartAreaAccY = chart.ChartAreas.Add("CaAccY");
+            var chartAreaAccZ = chart.ChartAreas.Add("CaAccZ");
 
-            //this.ch_AccPlot.Series.Add("AccX");
-            //this.ch_AccPlot.Series.Add("AccY");
-            //this.ch_AccPlot.Series.Add("AccZ");
-            var chartAreaAccX = ch_dataPlot.ChartAreas.Add("CaAccX");
-            var chartAreaAccY = ch_dataPlot.ChartAreas.Add("CaAccY");
-            var chartAreaAccZ = ch_dataPlot.ChartAreas.Add("CaAccZ");
-            var chartAreaGyrX = ch_dataPlot.ChartAreas.Add("CaGyrX");
-            var chartAreaGyrY = ch_dataPlot.ChartAreas.Add("CaGyrY");
-            var chartAreaGyrZ = ch_dataPlot.ChartAreas.Add("CaGyrZ");
+            chart.Series[0] = chart.Series.Add("AccX");
+            chart.Series[1] = chart.Series.Add("AccY");
+            chart.Series[2] = chart.Series.Add("AccZ");
 
-            ch_dataPlot.Series[0] = this.ch_dataPlot.Series.Add("AccX");
-            ch_dataPlot.Series[1] = this.ch_dataPlot.Series.Add("AccY");
-            ch_dataPlot.Series[2] = this.ch_dataPlot.Series.Add("AccZ");
-            ch_dataPlot.Series[3] = this.ch_dataPlot.Series.Add("GyrX");
-            ch_dataPlot.Series[4] = this.ch_dataPlot.Series.Add("GyrY");
-            ch_dataPlot.Series[5] = this.ch_dataPlot.Series.Add("GyrZ");
+            var leg1 = chart.Legends.Add("l1");
+            var leg2 = chart.Legends.Add("l2");
+            var leg3 = chart.Legends.Add("l3");
 
-            var leg1 = ch_dataPlot.Legends.Add("l1");
-            var leg2 = ch_dataPlot.Legends.Add("l2");
-            var leg3 = ch_dataPlot.Legends.Add("l3");
-            var leg4 = ch_dataPlot.Legends.Add("l4");
-            var leg5 = ch_dataPlot.Legends.Add("l5");
-            var leg6 = ch_dataPlot.Legends.Add("l6");
+            chart.Series[0].ChartArea = chartAreaAccX.Name;
+            chart.Series[1].ChartArea = chartAreaAccY.Name;
+            chart.Series[2].ChartArea = chartAreaAccZ.Name;
 
-            ch_dataPlot.Series[0].ChartArea = chartAreaAccX.Name;
-            ch_dataPlot.Series[1].ChartArea = chartAreaAccY.Name;
-            ch_dataPlot.Series[2].ChartArea = chartAreaAccZ.Name;
-            ch_dataPlot.Series[3].ChartArea = chartAreaGyrX.Name;
-            ch_dataPlot.Series[4].ChartArea = chartAreaGyrY.Name;
-            ch_dataPlot.Series[5].ChartArea = chartAreaGyrZ.Name;
-
-            ch_dataPlot.Series[0].Legend = leg1.Name;
-            ch_dataPlot.Series[1].Legend = leg2.Name;
-            ch_dataPlot.Series[2].Legend = leg3.Name;
-            ch_dataPlot.Series[3].Legend = leg4.Name;
-            ch_dataPlot.Series[4].Legend = leg5.Name;
-            ch_dataPlot.Series[5].Legend = leg6.Name;
+            chart.Series[0].Legend = leg1.Name;
+            chart.Series[1].Legend = leg2.Name;
+            chart.Series[2].Legend = leg3.Name;
 
             chartAreaAccY.AlignWithChartArea = chartAreaAccX.Name;
             chartAreaAccZ.AlignWithChartArea = chartAreaAccX.Name;
-            chartAreaGyrY.AlignWithChartArea = chartAreaGyrX.Name;
-            chartAreaGyrZ.AlignWithChartArea = chartAreaGyrX.Name;
-            //chartAreaZ.AlignWithChartArea = chartAreaZ.Name;
 
-            ch_dataPlot.Series[0].ChartType = SeriesChartType.FastLine;
-            ch_dataPlot.Series[1].ChartType = SeriesChartType.FastLine;
-            ch_dataPlot.Series[2].ChartType = SeriesChartType.FastLine;
-            ch_dataPlot.Series[3].ChartType = SeriesChartType.FastLine;
-            ch_dataPlot.Series[4].ChartType = SeriesChartType.FastLine;
-            ch_dataPlot.Series[5].ChartType = SeriesChartType.FastLine;
-            //ch_AccPlot.Series[0]
-            //ch_AccPlot.Series[1].AxisLabel = "Y";
-            //ch_AccPlot.Series[2].AxisLabel = "Z";
+            chart.Series[0].ChartType = SeriesChartType.FastLine;
+            chart.Series[1].ChartType = SeriesChartType.FastLine;
+            chart.Series[2].ChartType = SeriesChartType.FastLine;
 
             //Acc
             chartAreaAccX.Position.X = 0;
             chartAreaAccX.Position.Y = 0;
             chartAreaAccX.Position.Height = 33;
-            chartAreaAccX.Position.Width = 49;
+            chartAreaAccX.Position.Width = 100;
             chartAreaAccY.Position.Y = chartAreaAccX.Position.Bottom + 1;
             chartAreaAccY.Position.Height = chartAreaAccX.Position.Height;
             chartAreaAccY.Position.Width = chartAreaAccX.Position.Width;
@@ -393,30 +385,12 @@ namespace BLE_Drive_UI
             chartAreaAccZ.Position.Height = chartAreaAccY.Position.Height;
             chartAreaAccZ.Position.Width = chartAreaAccY.Position.Width;
 
-            //Gyr
-            chartAreaGyrX.Position.X = 51;
-            chartAreaGyrX.Position.Y = 0;
-            chartAreaGyrX.Position.Height = 33;
-            chartAreaGyrX.Position.Width = 49;
-            chartAreaGyrY.Position.Y = chartAreaGyrX.Position.Bottom + 1;
-            chartAreaGyrY.Position.Height = chartAreaGyrX.Position.Height;
-            chartAreaGyrY.Position.Width = chartAreaGyrX.Position.Width;
-            chartAreaGyrZ.Position.Y = chartAreaGyrY.Position.Bottom + 1;
-            chartAreaGyrZ.Position.Height = chartAreaGyrY.Position.Height;
-            chartAreaGyrZ.Position.Width = chartAreaGyrY.Position.Width;
-
             leg1.Position.Auto = false;
             leg1.Position = new ElementPosition(chartAreaAccX.Position.X + 40, chartAreaAccX.Position.Y, 10, 10);
             leg2.Position.Auto = false;
             leg2.Position = new ElementPosition(chartAreaAccX.Position.X + 40, chartAreaAccY.Position.Y, 10, 10);
             leg3.Position.Auto = false;
             leg3.Position = new ElementPosition(chartAreaAccX.Position.X + 40, chartAreaAccZ.Position.Y, 10, 10);
-            leg4.Position.Auto = false;
-            leg4.Position = new ElementPosition(chartAreaGyrX.Position.X + 40, chartAreaGyrX.Position.Y, 10, 10);
-            leg5.Position.Auto = false;
-            leg5.Position = new ElementPosition(chartAreaGyrX.Position.X + 40, chartAreaGyrY.Position.Y, 10, 10);
-            leg6.Position.Auto = false;
-            leg6.Position = new ElementPosition(chartAreaGyrX.Position.X + 40, chartAreaGyrZ.Position.Y, 10, 10);
 
             chartAreaAccX.AxisX.Maximum = _maxNumOfChartValues;
             chartAreaAccX.AxisX.Minimum = 0;
@@ -424,19 +398,6 @@ namespace BLE_Drive_UI
             chartAreaAccY.AxisX.Minimum = 0;
             chartAreaAccZ.AxisX.Maximum = chartAreaAccX.AxisX.Maximum;
             chartAreaAccZ.AxisX.Minimum = 0;
-            chartAreaGyrX.AxisX.Maximum = chartAreaAccX.AxisX.Maximum;
-            chartAreaGyrX.AxisX.Minimum = 0;
-            chartAreaGyrY.AxisX.Maximum = chartAreaAccX.AxisX.Maximum;
-            chartAreaGyrY.AxisX.Minimum = 0;
-            chartAreaGyrZ.AxisX.Maximum = chartAreaAccX.AxisX.Maximum;
-            chartAreaGyrZ.AxisX.Minimum = 0;
-
-            //chartAreaX.AxisY.Maximum = 20;
-            //chartAreaX.AxisY.Minimum = -chartAreaX.AxisY.Maximum;
-            //chartAreaY.AxisY.Maximum = chartAreaX.AxisY.Maximum;
-            //chartAreaY.AxisY.Minimum = -chartAreaX.AxisY.Maximum;
-            //chartAreaZ.AxisY.Maximum = chartAreaX.AxisY.Maximum;
-            //chartAreaZ.AxisY.Minimum = -chartAreaX.AxisY.Maximum;
 
             chartAreaAccX.AxisX.MajorGrid.Enabled = false;
             chartAreaAccX.AxisY.MajorGrid.Enabled = false;
@@ -444,23 +405,10 @@ namespace BLE_Drive_UI
             chartAreaAccY.AxisY.MajorGrid.Enabled = false;
             chartAreaAccZ.AxisX.MajorGrid.Enabled = false;
             chartAreaAccZ.AxisY.MajorGrid.Enabled = false;
-            chartAreaGyrX.AxisX.MajorGrid.Enabled = false;
-            chartAreaGyrX.AxisY.MajorGrid.Enabled = false;
-            chartAreaGyrY.AxisX.MajorGrid.Enabled = false;
-            chartAreaGyrY.AxisY.MajorGrid.Enabled = false;
-            chartAreaGyrZ.AxisX.MajorGrid.Enabled = false;
-            chartAreaGyrZ.AxisY.MajorGrid.Enabled = false;
 
-            //chartAreaAccX.AxisY.Title = "AccX in m/s^2";
-            //chartAreaAccY.AxisY.Title = "AccY in m/s^2";
-            //chartAreaAccZ.AxisY.Title = "AccZ in m/s^2";
-
-            ch_dataPlot.Series[0].BorderWidth = 2;
-            ch_dataPlot.Series[1].BorderWidth = 2;
-            ch_dataPlot.Series[2].BorderWidth = 2;
-            ch_dataPlot.Series[3].BorderWidth = 2;
-            ch_dataPlot.Series[4].BorderWidth = 2;
-            ch_dataPlot.Series[5].BorderWidth = 2;
+            chart.Series[0].BorderWidth = 2;
+            chart.Series[1].BorderWidth = 2;
+            chart.Series[2].BorderWidth = 2;
         }
 
         //private void PlotData_ProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -511,32 +459,26 @@ namespace BLE_Drive_UI
             //watch.Restart();
             //if(!_BLEdriver.Connected) return;
 
-            lock (m_chartLock)
+            foreach(var device in _BLEhub.ConnectedDeviceList)
             {
-                //ch_dataPlot.Invoke((Action)delegate
-                //{var data = _BLEdriver.GetDataToPlot();
-                var data = _BLEhub.GetDataToPlot();
-                ch_dataPlot.Series[0].Points.AddXY(_currentChartValue, data[0]);
-                ch_dataPlot.Series[1].Points.AddXY(_currentChartValue, data[1]);
-                ch_dataPlot.Series[2].Points.AddXY(_currentChartValue, data[2]);
-                ch_dataPlot.Series[3].Points.AddXY(_currentChartValue, data[3]);
-                ch_dataPlot.Series[4].Points.AddXY(_currentChartValue, data[4]);
-                ch_dataPlot.Series[5].Points.AddXY(_currentChartValue, data[5]);
-                _currentChartValue++;
-                if (_currentChartValue >= _maxNumOfChartValues)
+                lock (m_chartLock)
                 {
-                    _currentChartValue = 0;
-                    ch_dataPlot.Series[0].Points.Clear();
-                    ch_dataPlot.Series[1].Points.Clear();
-                    ch_dataPlot.Series[2].Points.Clear();
-                    ch_dataPlot.Series[3].Points.Clear();
-                    ch_dataPlot.Series[4].Points.Clear();
-                    ch_dataPlot.Series[5].Points.Clear();
+                    var data = device.GetDataToPlot();
+                    var id = device.DeviceInformation.SensorID;
+                    _ChartList[id].Series[0].Points.AddXY(_currentChartValue, data[0]);
+                    _ChartList[id].Series[1].Points.AddXY(_currentChartValue, data[1]);
+                    _ChartList[id].Series[2].Points.AddXY(_currentChartValue, data[2]);
+                    if (_currentChartValue >= _maxNumOfChartValues)
+                    {
+                        _ChartList[id].Series[0].Points.Clear();
+                        _ChartList[id].Series[1].Points.Clear();
+                        _ChartList[id].Series[2].Points.Clear();
+                    }
                 }
-                //});
             }
-            //Console.WriteLine(watch.ElapsedMilliseconds);
-            //watch.Restart();
+            if (_currentChartValue >= _maxNumOfChartValues) _currentChartValue = 0;
+            _currentChartValue++;
         }
+
     }
 }

@@ -25,9 +25,9 @@ namespace BLE_Drive_UI.Domain
 
     public class imuDataEventArgs : EventArgs
     {
-        public byte calib { get; set; }
+        //public byte calib { get; set; }
 
-        public int id { get; set; }
+        //public int id { get; set; }
         public float[] data { get; set;}
         //public float quatW { get; set; }
         //public float quatX { get; set; }
