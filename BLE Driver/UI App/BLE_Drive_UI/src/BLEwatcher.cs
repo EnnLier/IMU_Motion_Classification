@@ -39,7 +39,7 @@ namespace BLE_Drive_UI.src
             deviceWatcher.Start();
         }
 
-        public List<BLEdevice> deviceList = new List<BLEdevice>();
+        public List<BLEDeviceInformation> deviceList = new List<BLEDeviceInformation>();
         public DeviceWatcher deviceWatcher;
 
         public object mListLock = new object();
@@ -63,9 +63,9 @@ namespace BLE_Drive_UI.src
             //Console.WriteLine(args.Id);
             lock (mListLock)
             {
-                foreach (BLEdevice dev in deviceList)
+                foreach (BLEDeviceInformation dev in deviceList)
                 {
-                    if (args.Id.Equals(dev.Id))
+                    if (args.Id.Equals(dev.BLEId))
                     {
                         deviceList.Remove(dev);
                         return;
@@ -88,13 +88,13 @@ namespace BLE_Drive_UI.src
             {
                 return;
             }
-            BLEdevice device = new BLEdevice(args.Name, args.Id, args.Pairing.CanPair);
+            BLEDeviceInformation device = new BLEDeviceInformation(args.Name, args.Id, args.Pairing.CanPair);
             //bool update = false;
             lock(mListLock)
             {
-                foreach(BLEdevice dev in deviceList)
+                foreach(BLEDeviceInformation dev in deviceList)
                 {
-                    if (device.Id.Equals(dev.Id))
+                    if (device.BLEId.Equals(dev.BLEId))
                     {
                         return;
                     }

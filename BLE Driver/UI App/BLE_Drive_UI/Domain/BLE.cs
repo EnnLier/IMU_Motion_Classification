@@ -10,47 +10,49 @@ using BLE_Drive_UI.Domain;
 namespace BLE_Drive_UI.Domain
 {
 
-    public class BLEdevice
+    public class BLEDeviceInformation : Object
     {
-        public BLEdevice(String name, String id, bool canpair)
+        public BLEDeviceInformation(String name, String id, bool canpair)
         {
             Name = name;
-            Id = id;
+            BLEId = id;
             canPair = canpair;
         //Service = new Guid();
         //HandlesOfCharacteristicsOfService = new Dictionary<Guid,Dictionary<Guid, ushort>>();
 
     }
-        //private String printDictionary()
-        //{
-        //    String toRet = String.Empty;
-        //    String charHandles = String.Empty;
-        //    int i = 0;
-        //    foreach (KeyValuePair< Guid,Dictionary<Guid, ushort>> serviceCharacterHandles in HandlesOfCharacteristicsOfService)
-        //    {
-        //        int k = 0;
-        //        foreach(KeyValuePair<Guid,ushort> characterHandles in serviceCharacterHandles.Value)
-        //        {
-        //            charHandles = "Characteristic " + k + ": " + characterHandles.Key.ToString() + " Handle: " + characterHandles.Value;
-        //            k++;
-        //        }
-        //        toRet += "Service " + i + ": " + serviceCharacterHandles.Key.ToString() + "\t" + charHandles + "\t";
-        //        //toRet = string.Format("Charachteristic {0} = {1}, Value = {2} \t",i, characterHandles.Key, handles);
-        //        i++;
-        //    }
-        //    return toRet;
-        //}
-        public bool isFront { get; set;}
+
+        public int SensorID { get; set;}
         public String Name { get; }
-        public String Id { get; }
+        public String BLEId { get; }
         public bool canPair { get; }
         public GattCharacteristic BatteryCharacteristic { get; set; }
         public GattCharacteristic BLEuartCharacteristic { get; set; }
         public GattCharacteristic BLEuartCharacteristic_write { get; set; }
-        //public Guid Service { get;set;}
-        //public Dictionary<Guid,Dictionary<Guid,ushort>> HandlesOfCharacteristicsOfService { get;set;}
 
-        //public override string ToString() => $"(Name: {Name}, ID: {Id}, Can Pair: {canPair}), Service: {Service.ToString()}) , Characteristics and Handles: {printDictionary()})";
+        public BLEDeviceInformation Clone()
+        {
+            return (BLEDeviceInformation)this.MemberwiseClone();
+        }
+        public String GetDataAsString()
+        {
+            String stringToSave = " " + SensorID.ToString();
+            foreach(var calib in Calibration)
+            {
+                stringToSave += " " + calib.ToString();
+            }
+            foreach(var dat in Data)
+            {
+                stringToSave += " " + dat.ToString("0.0000");
+            }
+            Console.WriteLine(stringToSave);
+            return stringToSave;
+
+        }
+        public int BatteryLevel;
+        public float[] Data = new float[10];
+        public int[] Calibration = new int[4];
+        //public String StringToSave = String.Empty;
     }
 
     public static class BLEUUID

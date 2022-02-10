@@ -28,6 +28,7 @@ namespace BLE_Drive_UI.Domain
 
         public void Add(String data)
         {
+            //Console.WriteLine(data);
             if (Count <= _bufferLength)
             {
                 SBuffer[Count] = data;
@@ -76,7 +77,7 @@ namespace BLE_Drive_UI.Domain
         private static double _rate;
         private double cummulativeRate;
 
-        private String dataToSave = String.Empty;
+        private String[] dataToSave = new string[2]{ String.Empty,String.Empty};
         private String timeStamp = String.Empty;
 
         public bool isSaving = false;
@@ -111,7 +112,7 @@ namespace BLE_Drive_UI.Domain
         {
             Console.WriteLine("Start Saving....");
             waitForThreadsToFinish();
-            dataToSave = String.Empty;
+            //dataToSave = String.Empty;
             Active = true;
             isSaving = true;
             buffer1.Active = true;
@@ -137,20 +138,21 @@ namespace BLE_Drive_UI.Domain
             flush();
             Watch.Reset();
             waitForThreadsToFinish();
+            dataToSave = new String[]{ String.Empty,String.Empty};
             Active = false;
         }
 
-        public void addData(String data)
+        public void addData(int id, String data)
         {
             lock (mThreadLock)
             {
-                dataToSave = data;
+                dataToSave[id] = data;
             }
         }
 
         private void Buffer1Polling()
         {
-            while (dataToSave == String.Empty) { Thread.Sleep(1); }
+            while (!isSaving && dataToSave.Count(p => p == String.Empty) == dataToSave.Length) { Thread.Sleep(1); }
             Watch.Start();
             while (isSaving)
             {
@@ -160,9 +162,10 @@ namespace BLE_Drive_UI.Domain
                 {
                     cummulativeRate += _rate;
                     String timestamp = (t / 1000).ToString("0.0000");
+
                     lock (mThreadLock)
                     {
-                        buffer1.Add(timestamp + dataToSave);
+                        buffer1.Add(timestamp + dataToSave[0] + dataToSave[1]);
                     }
                     if (buffer1.Count >= _bufferLength)
                     {
@@ -189,7 +192,7 @@ namespace BLE_Drive_UI.Domain
                     String timestamp = (t / 1000).ToString("0.0000");
                     lock (mThreadLock)
                     {
-                        buffer2.Add(timestamp + dataToSave);
+                        buffer2.Add(timestamp + dataToSave[0] + dataToSave[1]);
                     }
                     if (buffer2.Count >= _bufferLength)
                     {
