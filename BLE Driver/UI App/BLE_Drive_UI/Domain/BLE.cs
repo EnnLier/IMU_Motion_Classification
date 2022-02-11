@@ -45,7 +45,7 @@ namespace BLE_Drive_UI.Domain
             {
                 stringToSave += " " + dat.ToString("0.0000");
             }
-            Console.WriteLine(stringToSave);
+            //Console.WriteLine(stringToSave);
             return stringToSave;
 
         }

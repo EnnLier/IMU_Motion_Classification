@@ -75,7 +75,7 @@ namespace BLE_Drive_UI.Domain
         private Stopwatch Watch;
 
         private static double _rate;
-        private double cummulativeRate;
+        private double cumulativeRate;
 
         private String[] dataToSave = new string[2]{ String.Empty,String.Empty};
         private String timeStamp = String.Empty;
@@ -118,7 +118,7 @@ namespace BLE_Drive_UI.Domain
             buffer1.Active = true;
             buffer2.Active = false;
 
-            cummulativeRate = 0;
+            cumulativeRate = 0;
 
             Buffer1PollingThread = new Thread(Buffer1Polling);
             //Buffer2PollingThread = new Thread(Buffer2Polling);
@@ -152,15 +152,15 @@ namespace BLE_Drive_UI.Domain
 
         private void Buffer1Polling()
         {
-            while (!isSaving && dataToSave.Count(p => p == String.Empty) == dataToSave.Length) { Thread.Sleep(1); }
+            while (!isSaving || dataToSave.Count(p => p == String.Empty) == dataToSave.Length) { Thread.Sleep(1); }
             Watch.Start();
             while (isSaving)
             {
                 //if (!buffer1.Active) { var n = _rate / 5; Thread.Sleep((int)n); continue; }
                 double t = Watch.Elapsed.TotalMilliseconds;
-                if (t >= cummulativeRate)
+                if (t >= cumulativeRate)
                 {
-                    cummulativeRate += _rate;
+                    cumulativeRate += _rate;
                     String timestamp = (t / 1000).ToString("0.0000");
 
                     lock (mThreadLock)
@@ -186,9 +186,9 @@ namespace BLE_Drive_UI.Domain
             {
                 //if (!buffer2.Active){ var n = _rate / 5; Thread.Sleep((int)n); continue; }
                 double t = Watch.Elapsed.TotalMilliseconds;
-                if (t >= cummulativeRate)
+                if (t >= cumulativeRate)
                 {
-                    cummulativeRate += _rate;
+                    cumulativeRate += _rate;
                     String timestamp = (t / 1000).ToString("0.0000");
                     lock (mThreadLock)
                     {
