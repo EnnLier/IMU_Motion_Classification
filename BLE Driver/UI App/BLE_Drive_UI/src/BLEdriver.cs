@@ -70,9 +70,9 @@ namespace BLE_Drive_UI.src
             IsSaving = false;
             IsStreaming = false;
             _dataSaver = new SyncDataSaver(_writeBuffersize, _writeBufferRate);
-            _tcpStreamer = new TCPStreamer();
+            //_tcpStreamer = new TCPStreamer();
 
-            _tcpStreamer.ConnectedChanged += TCPConnectionStatusChangedEvent;
+            //_tcpStreamer.ConnectedChanged += TCPConnectionStatusChangedEvent;
 
             //Calibration = new string[] {"0","0","0","0"};
             dataToPlot = new float[_datapoints];
@@ -100,9 +100,14 @@ namespace BLE_Drive_UI.src
 
         public void StartStreaming()
         {
+            
+            if (_tcpStreamer == null)
+            {
+                _tcpStreamer = new TCPStreamer();
+                _tcpStreamer.ConnectedChanged += TCPConnectionStatusChangedEvent;
+            }
             Thread InitTCPThread = new Thread(_tcpStreamer.StartTCPClient);
             InitTCPThread.Start();
-            //_tcpStreamer.StartTCPClient();
         }
 
         public void StopStreaming()
@@ -144,11 +149,11 @@ namespace BLE_Drive_UI.src
             }
         }
 
-        public void Recalibrate_imu(BLEDeviceInformation device)
+        public async void Recalibrate_imu(BLEDeviceInformation device)
         {
             try
             {
-                WriteToBLEDevice(device, "Recalibrate");
+                await WriteToBLEDevice(device, "Recalibrate");
             }
             catch (System.UnauthorizedAccessException e)
             {
@@ -346,7 +351,8 @@ namespace BLE_Drive_UI.src
 
                     if (IsStreaming && _tcpStreamer != null)
                     {
-                        _tcpStreamer.sendDataTCP(packet);
+                        //_tcpStreamer.sendDataTCP(packet);
+                        _tcpStreamer.sendDataTCP(device.SensorID,device.Data);
                     }
                     if (IsSaving && _dataSaver != null)
                     {

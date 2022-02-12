@@ -43,13 +43,14 @@ namespace BLE_Drive_UI.src
 
         public void StartTCPClient()
         {
-            if (_sender != null) { return; }
+            if (_sender == null) { return; }
             byte[] bytes = new byte[512];
 
             // Connect the socket to the remote endpoint. Catch any errors.    
             try
             {
                 // Connect to Remote EndPoint  
+                Console.WriteLine("Connecting TCP");
                 _sender.Connect(_remoteEP);
 
                 Console.WriteLine("Socket connected to {0}",_sender.RemoteEndPoint.ToString());
@@ -100,6 +101,47 @@ namespace BLE_Drive_UI.src
                     byte[] msg = Encoding.ASCII.GetBytes(data);
 
                     int bytesSent = _sender.Send(msg);
+                }
+            }
+            catch (System.Net.Sockets.SocketException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
+
+        internal void sendDataTCP(int sensorID, float[] data)
+        {
+            try
+            {
+                if (_sender.Connected)
+                {
+                    //var floatArray1 = new float[] { 123.45f, 123f, 45f, 1.2f, 34.5f };
+
+                    // create a byte array and copy the floats into it...
+                    //Console.WriteLine(1);
+                    var byteArray = new Byte[1 + 4 + data.Length * 4];
+                    //Console.WriteLine(2);
+                    byteArray[0] = 0x55;
+                    //Console.WriteLine(byteArray.Length);
+                    //Console.WriteLine(BitConverter.GetBytes(sensorID).Length);
+                    Buffer.BlockCopy(BitConverter.GetBytes(sensorID), 0, byteArray, 1, BitConverter.GetBytes(sensorID).Length);
+                    //Console.WriteLine(3);
+                    Buffer.BlockCopy(data, 0, byteArray, 5, data.Length* 4);
+                    //Console.WriteLine(4);
+                    //// create a second float array and copy the bytes into it...
+                    //var floatArray2 = new float[byteArray.Length / 4];
+                    //Buffer.BlockCopy(byteArray, 0, floatArray2, 0, byteArray.Length);
+
+
+
+                    //Byte[] packet = new byte[1 + BitConverter.GetBytes(sensorID).Length];
+                    //packet[0] = 0x55;
+                    //packet.Concat(BitConverter.GetBytes(sensorID));
+                    //packet.Concat();
+                    //packet[1] = 
+                    //Buffer.BlockCopy(BitConverter.GetBytes(sensorID), 0, packet, 1 , BitConverter.GetBytes(sensorID).Length);
+                    //Buffer.BlockCopy(data,0,packet,1+BitConverter.GetBytes(sensorID).Length, BitConverter.GetBytes(data).Length)
+                    int bytesSent = _sender.Send(byteArray);
                 }
             }
             catch (System.Net.Sockets.SocketException e)
@@ -166,5 +208,6 @@ namespace BLE_Drive_UI.src
                 handler(this, e);
             }
         }
+
     }
 }
