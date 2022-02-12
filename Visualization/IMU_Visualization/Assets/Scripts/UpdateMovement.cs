@@ -12,11 +12,11 @@ public class UpdateMovement : MonoBehaviour
     // Start is called before the first frame update
     private TCPListener _listener;
 
-    private byte[] _buffer;
+    private float[] _buffer;
 
     private uint _calib;
 
-    public Vector3 rootOffset;
+    //public Vector3 rootOffset;
 
     private Vector3 EulerAngles;
 
@@ -24,6 +24,7 @@ public class UpdateMovement : MonoBehaviour
     void Start()
     {
         _listener = gameObject.GetComponent<TCPListener>();
+        //gameObject.GetComponent<>
     }
 
     // Update is called once per frame
@@ -32,14 +33,14 @@ public class UpdateMovement : MonoBehaviour
         if (!_listener.Connected ) { return;}
         try
         {
-            lock(_listener.mThreadLock)
+            lock (_listener.mThreadLock)
             {
-                if(_listener.IncomingDataBuffer != null) {_buffer = _listener.IncomingDataBuffer; }
+                if (_listener.IncomingDataBufferFront != null) { _buffer = _listener.IncomingDataBufferFront; }
                 else return;
-                if (_listener.IncomingDataBuffer.Length < TCPListener._datasize) return;
+                if (_listener.IncomingDataBufferFront.Length < TCPListener._datasize) return;
             }
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             print("Failed to read Buffer: " + e);
             return;
@@ -47,17 +48,20 @@ public class UpdateMovement : MonoBehaviour
         try
         {
 
-            var id = (uint)_buffer[1];
-            _calib = (uint)_buffer[2];
+            var id = (int)_buffer[0];
+            //_calib = (uint)_buffer[2];
 
+            float quatW = _buffer[1];
+            float quatX = _buffer[2];
+            float quatY = _buffer[3];
+            float quatZ = _buffer[4];
+            //var scalingFactor = (1.00 / (1 << 14));
 
-            var scalingFactor = (1.00 / (1 << 14));
-                
-            float quatW, quatX, quatY, quatZ;
-            quatW = (float)scalingFactor * ((Int16)(_buffer[3] | (_buffer[4] << 8)));
-            quatX = (float)scalingFactor * ((Int16)(_buffer[5] | (_buffer[6] << 8)));
-            quatY = (float)scalingFactor * ((Int16)(_buffer[7] | (_buffer[8] << 8)));
-            quatZ = (float)scalingFactor * ((Int16)(_buffer[9] | (_buffer[10] << 8)));
+            //float quatW, quatX, quatY, quatZ;
+            //quatW = (float)scalingFactor * ((Int16)(_buffer[3] | (_buffer[4] << 8)));
+            //quatX = (float)scalingFactor * ((Int16)(_buffer[5] | (_buffer[6] << 8)));
+            //quatY = (float)scalingFactor * ((Int16)(_buffer[7] | (_buffer[8] << 8)));
+            //quatZ = (float)scalingFactor * ((Int16)(_buffer[9] | (_buffer[10] << 8)));
 
             //System.Numerics.Quaternion tempBodyPose = new System.Numerics.Quaternion(quatW, quatX, quatY, quatZ);
             //System.Numerics.Quaternion conjTempBodyPose = System.Numerics.Quaternion.Conjugate(tempBodyPose);

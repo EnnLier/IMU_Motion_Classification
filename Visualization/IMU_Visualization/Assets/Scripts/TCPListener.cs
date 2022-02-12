@@ -24,13 +24,20 @@ public class TCPListener : MonoBehaviour
     Thread DataReceiveThread;
     Thread WaitingThread;
 
-    public static uint _datasize = 19;
+    private static int _numOfFloats = 11;
+    public static int _datasize = 1 + 4 * _numOfFloats;
 
-    public byte[] IncomingDataBuffer = null;
+    public float[] IncomingDataBufferFront = null;
+    public float[] IncomingDataBufferBack = null;
     public bool Connected = false;
     public bool justClosed = false;
 
     public object mThreadLock = new object();
+
+    private Vector3 EulerAngles;
+
+    private GameObject Front;
+    private GameObject Back;
 
     // Start is called before the first frame update
     void Start()
@@ -39,7 +46,11 @@ public class TCPListener : MonoBehaviour
         _host = Dns.GetHostEntry("localhost");
         _ipAddress = _host.AddressList[0];
         _localEndPoint = new IPEndPoint(_ipAddress, 11000);
-        
+
+        //Front = GameObject.Find("skateboard/Axis_Front");
+        Front = this.transform.GetChild(0).gameObject;
+        //Back = GameObject.Find("skateboard/Axis_Back");
+        Back = this.transform.GetChild(0).gameObject;
 
         WaitingThread = new Thread(StartServer);
         WaitingThread.Start();
@@ -55,7 +66,7 @@ public class TCPListener : MonoBehaviour
             _listener.Bind(_localEndPoint);
             // Specify how many requests a Socket can listen before it gives Server busy response.  
             // We will listen 10 requests at a time  
-            _listener.Listen(10);
+            _listener.Listen(40);
 
             print("Waiting for a connection...");
             _handler = _listener.Accept();
@@ -81,12 +92,28 @@ public class TCPListener : MonoBehaviour
                 byte[] bytes = new byte[_datasize];
                 int bytesRec = _handler.Receive(bytes);
 
+                //create a float array and copy the bytes into it...
+                var floatArray = new float[_numOfFloats];
+                Buffer.BlockCopy(bytes, 1, floatArray, 0, _datasize - 1);
+
                 if (bytes[0] == 0x55)
                 {
                     //print("rec");
                     lock (mThreadLock)
                     {
-                        IncomingDataBuffer = bytes;
+                        
+
+                        if ((int)floatArray[0] == 0)
+                        {
+                            IncomingDataBufferFront = floatArray;
+                            //Front.transform.rotation = BodyPose;
+
+                        }
+                        else if ((int)floatArray[0] == 1)
+                        {
+                            IncomingDataBufferBack = floatArray;
+                            //Back.transform.rotation = BodyPose;
+                        }
                     }
                 }
                 if (bytes[1] == 0x04)
@@ -155,6 +182,43 @@ public class TCPListener : MonoBehaviour
                 
             }
         }
+        if (Connected)
+        {
+            print(IncomingDataBufferFront.Length);
+            if (IncomingDataBufferFront != null && IncomingDataBufferFront.Length == _numOfFloats)
+            {
+                
+                float quatW = IncomingDataBufferFront[1];
+                float quatX = IncomingDataBufferFront[2];
+                float quatY = IncomingDataBufferFront[3];
+                float quatZ = IncomingDataBufferFront[4];
+
+                Quaternion BodyPose = new Quaternion(-quatZ, -quatX, -quatY, quatW);
+
+                EulerAngles.x = -BodyPose.eulerAngles.x;
+                EulerAngles.y = BodyPose.eulerAngles.z;
+                EulerAngles.z = BodyPose.eulerAngles.y;
+
+                Front.transform.rotation = BodyPose;
+            }
+            if (IncomingDataBufferBack != null && IncomingDataBufferBack.Length == _numOfFloats)
+            {
+                float quatW = IncomingDataBufferBack[1];
+                float quatX = IncomingDataBufferBack[2];
+                float quatY = IncomingDataBufferBack[3];
+                float quatZ = IncomingDataBufferBack[4];
+
+                Quaternion BodyPose = new Quaternion(-quatZ, -quatX, -quatY, quatW);
+
+                EulerAngles.x = -BodyPose.eulerAngles.x;
+                EulerAngles.y = BodyPose.eulerAngles.z;
+                EulerAngles.z = BodyPose.eulerAngles.y;
+
+                Back.transform.rotation = BodyPose;
+            }
+
+        }
+        
     }
 
     bool SocketConnected(Socket s)
