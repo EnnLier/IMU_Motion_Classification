@@ -42,9 +42,9 @@ namespace BLE_Drive_UI.src
         private static UInt16 _writeBuffersize = 200;
         private static UInt16 _writeBufferRate = 10;
 
-        public event EventHandler<statusChangedEventArgs> StatusChanged;
+        public event EventHandler<StatusChangedEventArgs> StatusChanged;
         //public event EventHandler<changeLabelEventArgs> ChangeLabel;
-        public event EventHandler<imuDataEventArgs> UpdateChart;
+        public event EventHandler<AddLogEntryEventArgs> WriteLogEntry;
         public event EventHandler SelectedDeviceFound;
         public event EventHandler<ConnectedChangedEventArgs> ConnectedChanged;
         //public event Action<int> UpdateBatteryInfo;
@@ -73,7 +73,7 @@ namespace BLE_Drive_UI.src
             //_tcpStreamer = new TCPStreamer();
 
             //_tcpStreamer.ConnectedChanged += TCPConnectionStatusChangedEvent;
-
+            
             //Calibration = new string[] {"0","0","0","0"};
             dataToPlot = new float[_datapoints];
 
@@ -105,6 +105,7 @@ namespace BLE_Drive_UI.src
             {
                 _tcpStreamer = new TCPStreamer();
                 _tcpStreamer.ConnectedChanged += TCPConnectionStatusChangedEvent;
+                _tcpStreamer.StatusChanged += StatusChanged;
             }
             Thread InitTCPThread = new Thread(_tcpStreamer.StartTCPClient);
             InitTCPThread.Start();
@@ -112,7 +113,14 @@ namespace BLE_Drive_UI.src
 
         public void StopStreaming()
         {
-            _tcpStreamer.CloseTCPClient();
+            if (_tcpStreamer == null)
+            {
+                _tcpStreamer.CloseTCPClient();
+                _tcpStreamer.ConnectedChanged -= TCPConnectionStatusChangedEvent;
+                _tcpStreamer.StatusChanged -= StatusChanged;
+                _tcpStreamer = null;
+            }
+            
         }
 
         public void StartSaving()
@@ -429,8 +437,8 @@ namespace BLE_Drive_UI.src
 
             //Prepare event to update GUI
             ConnectedChangedEventArgs e = new ConnectedChangedEventArgs();
-            e.deviceInformation = deviceInformation;
-            e.status = connected;
+            e.DeviceInformation = deviceInformation;
+            e.Status = connected;
 
             if (connected)
             {
@@ -457,11 +465,11 @@ namespace BLE_Drive_UI.src
         //Eventhandler
         protected virtual void OnStatusChanged(String status)
         {
-            statusChangedEventArgs e = new statusChangedEventArgs();
+            StatusChangedEventArgs e = new StatusChangedEventArgs();
             e.Status = status;
             e.Timestamp = DateTime.Now;
             
-            EventHandler<statusChangedEventArgs> handler = StatusChanged;
+            EventHandler<StatusChangedEventArgs> handler = StatusChanged;
             if (handler != null)
             {
                 handler(this, e);
@@ -505,10 +513,24 @@ namespace BLE_Drive_UI.src
             }
         }
 
-        private void TCPConnectionStatusChangedEvent(object sender, tcpConnectEventArgs e)
+        protected virtual void OnWriteLogEntry(String entry)
         {
-            IsStreaming = e.connected;
+            AddLogEntryEventArgs e = new AddLogEntryEventArgs();
+            e.LogEntry = entry;
+            EventHandler<AddLogEntryEventArgs> handler = WriteLogEntry;
+            if (handler != null)
+            {
+                handler(this, e);
+            }
         }
+
+
+        private void TCPConnectionStatusChangedEvent(object sender, TcpConnectEventArgs e)
+        {
+            IsStreaming = e.Connected;
+        }
+
+
     }
 
 

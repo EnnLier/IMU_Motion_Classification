@@ -14,6 +14,7 @@ using Windows.Devices.Enumeration;
 //using System.Web.UI.DataVisualization.Charting;
 using System.Windows.Forms.DataVisualization.Charting;
 
+
 namespace BLE_Drive_UI
 {
     public partial class mw_form : Form
@@ -41,13 +42,17 @@ namespace BLE_Drive_UI
         private List<Control> _BackDeviceControlList;
         private List<List<Control>> _DeviceControlList;
 
+        private LogWriter _logWriter;
+
         public mw_form()
         {
+            _logWriter = new LogWriter();
             _BLEwatcher = new BLEwatcher();
             _BLEdriver = new BLEdriver();
             //_BLEdriver = new BLEhub();
             _BLEdriver.StatusChanged += BLEdriver_StatusChanged;
             _BLEdriver.ConnectedChanged += BLEDriver_ConnectedChanged;
+            _BLEdriver.WriteLogEntry += OnLogfileEntry;
             //_BLEdriver.ChangeLabel += Form_ChangeLabel;
             InitializeComponent();
 
@@ -96,12 +101,17 @@ namespace BLE_Drive_UI
             initialize_dataChart(this.ch_backDataPlot);
         }
 
+        ~mw_form()
+        {
+            _logWriter.Save();
+        }
+
 
         private void BLEDriver_ConnectedChanged(object sender, ConnectedChangedEventArgs args)
         {
             //pb_Refresh_List.BeginInvoke((Action)(() => pb_Refresh_List_Click(null,null)));
-            var connected = args.status;
-            var id = args.deviceInformation.SensorID;
+            var connected = args.Status;
+            var id = args.DeviceInformation.SensorID;
             //Console.WriteLine(args.deviceInformation.SensorID);
             //Check if Controls need to be invoked to enable or disable them and act accordingly
             //var i = b_recalibrate.InvokeRequired == true ? b_recalibrate.Invoke((Action)(() => this.b_recalibrate.Enabled = connected ? true : false)) : this.b_recalibrate.Enabled = connected ? true : false;
@@ -254,13 +264,14 @@ namespace BLE_Drive_UI
             
         }
 
-        private void BLEdriver_StatusChanged(object sender, statusChangedEventArgs e)
+        private void BLEdriver_StatusChanged(object sender, StatusChangedEventArgs e)
         {
             var timestamp = e.Timestamp.ToString("HH:mm:ss");
             //if(!_BLEdriver.Connected)
             //{
             //    cb_plotAcc.Checked = false;
             //}
+            _logWriter.Write(e.Status);
             if (l_Driver_Status.InvokeRequired)
                 l_Driver_Status.Invoke((Action)delegate { this.l_Driver_Status.Text = timestamp + "      " + e.Status; });
             else
@@ -480,5 +491,14 @@ namespace BLE_Drive_UI
             _currentChartValue++;
         }
 
+        private void mw_form_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            _logWriter.Save();
+        }
+
+        protected virtual void OnLogfileEntry(object sender, AddLogEntryEventArgs e)
+        {
+            _logWriter.Write(e.LogEntry);
+        }
     }
 }

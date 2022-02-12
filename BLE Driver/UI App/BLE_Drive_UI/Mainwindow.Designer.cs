@@ -481,6 +481,7 @@ namespace BLE_Drive_UI
             this.Controls.Add(this.pb_Refresh_List);
             this.Name = "mw_form";
             this.Text = "Mainwindow";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.mw_form_FormClosing);
             this.Load += new System.EventHandler(this.mw_form_Load);
             this.p_backCalibPanel.ResumeLayout(false);
             this.p_backCalibPanel.PerformLayout();

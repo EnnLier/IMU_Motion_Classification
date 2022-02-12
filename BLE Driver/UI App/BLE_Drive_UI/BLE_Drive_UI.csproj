@@ -58,6 +58,7 @@
     <Compile Include="Domain\Args.cs" />
     <Compile Include="Domain\BLE.cs" />
     <Compile Include="Domain\DataHandling.cs" />
+    <Compile Include="Domain\LogWriter.cs" />
     <Compile Include="src\BLEdriver.cs" />
     <Compile Include="src\BLEwatcher.cs" />
     <Compile Include="Mainwindow.cs">

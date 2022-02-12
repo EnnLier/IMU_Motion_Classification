@@ -11,8 +11,8 @@ namespace BLE_Drive_UI.src
 {
     class TCPStreamer
     {
-        public event EventHandler<statusChangedEventArgs> StatusChanged;
-        public event EventHandler<tcpConnectEventArgs> ConnectedChanged;
+        public event EventHandler<StatusChangedEventArgs> StatusChanged;
+        public event EventHandler<TcpConnectEventArgs> ConnectedChanged;
 
         public bool Connected { get; private set;}
 
@@ -185,11 +185,11 @@ namespace BLE_Drive_UI.src
 
         protected virtual void OnStatusChanged(String status)
         {
-            statusChangedEventArgs e = new statusChangedEventArgs();
+            StatusChangedEventArgs e = new StatusChangedEventArgs();
             e.Status = status;
             e.Timestamp = DateTime.Now;
 
-            EventHandler<statusChangedEventArgs> handler = StatusChanged;
+            EventHandler<StatusChangedEventArgs> handler = StatusChanged;
             if (handler != null)
             {
                 handler(this, e);
@@ -199,10 +199,10 @@ namespace BLE_Drive_UI.src
         protected virtual void OnConnectedChanged(bool connected)
         {
             Connected = connected;
-            tcpConnectEventArgs e = new tcpConnectEventArgs();
-            e.connected = connected;
+            TcpConnectEventArgs e = new TcpConnectEventArgs();
+            e.Connected = connected;
 
-            EventHandler<tcpConnectEventArgs> handler = ConnectedChanged;
+            EventHandler<TcpConnectEventArgs> handler = ConnectedChanged;
             if (handler != null)
             {
                 handler(this, e);

@@ -10,25 +10,30 @@ using System.Threading.Tasks;
 
 namespace BLE_Drive_UI.Domain
 {
-    public class statusChangedEventArgs : EventArgs
+    public class StatusChangedEventArgs : EventArgs
     {
-        public BLEDeviceInformation deviceInformation { get; set; }
+        public BLEDeviceInformation DeviceInformation { get; set; }
         public String Status { get; set; }
         public DateTime Timestamp { get; set; }
     }
-    
-    public class ConnectedChangedEventArgs : EventArgs
+
+    public class AddLogEntryEventArgs : EventArgs
     {
-        public BLEDeviceInformation deviceInformation { get; set; }
-        public bool status { get; set; }
+        public String LogEntry { get; set; }
     }
 
-    public class imuDataEventArgs : EventArgs
+    public class ConnectedChangedEventArgs : EventArgs
+    {
+        public BLEDeviceInformation DeviceInformation { get; set; }
+        public bool Status { get; set; }
+    }
+
+    public class ImuDataEventArgs : EventArgs
     {
         //public byte calib { get; set; }
 
         //public int id { get; set; }
-        public float[] data { get; set;}
+        public float[] Data { get; set;}
         //public float quatW { get; set; }
         //public float quatX { get; set; }
         //public float quatY { get; set; }
@@ -47,8 +52,8 @@ namespace BLE_Drive_UI.Domain
     //    public String value { get; set; }
     //}
 
-    public class tcpConnectEventArgs : EventArgs
+    public class TcpConnectEventArgs : EventArgs
     {
-        public bool connected { get; set; }
+        public bool Connected { get; set; }
     }
 }
