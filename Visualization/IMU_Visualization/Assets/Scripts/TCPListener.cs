@@ -50,7 +50,7 @@ public class TCPListener : MonoBehaviour
         //Front = GameObject.Find("skateboard/Axis_Front");
         Front = this.transform.GetChild(0).gameObject;
         //Back = GameObject.Find("skateboard/Axis_Back");
-        Back = this.transform.GetChild(0).gameObject;
+        Back = this.transform.GetChild(1).gameObject;
 
         WaitingThread = new Thread(StartServer);
         WaitingThread.Start();
