@@ -7,20 +7,33 @@ using System.Text;
 using BLE_Drive_UI.Domain;
 using System.Threading.Tasks;
 
+/// <summary>
+/// This class allows transmission of incoming IMU data from the driver directly via a TCP connection
+/// </summary>
+
 namespace BLE_Drive_UI.src
 {
     class TCPStreamer
     {
+        //Events
         public event EventHandler<StatusChangedEventArgs> StatusChanged;
         public event EventHandler<TcpConnectEventArgs> ConnectedChanged;
 
+        //State variables
         public bool Connected { get; private set;}
 
-        public IPHostEntry _host;
-        public IPAddress _ipAddress;
-        public IPEndPoint _remoteEP;
-        public Socket _sender;
+        //TCP objects
+        private IPHostEntry _host;
+        private IPAddress _ipAddress;
+        private IPEndPoint _remoteEP;
+        private Socket _sender;
 
+        /// <summary>
+        /// Set paramters for the TCP Host on Port 11000 (Make this dynamic). If no parameters are set, establish connection to localhost
+        /// </summary>
+        /// <param name="host">Host IP</param>
+        /// <param name="ipAddress">Client/Remote IP</param>
+        /// <param name="remoteEP"></param>
         public TCPStreamer(IPHostEntry host = null, IPAddress ipAddress = null, IPEndPoint remoteEP = null)
         {
             try
@@ -41,6 +54,9 @@ namespace BLE_Drive_UI.src
             }
         }
 
+        /// <summary>
+        /// Connect to remote Client
+        /// </summary>
         public void StartTCPClient()
         {
             if (_sender == null) { return; }
@@ -69,6 +85,9 @@ namespace BLE_Drive_UI.src
             
         }
 
+        /// <summary>
+        /// Close client connection
+        /// </summary>
         public void CloseTCPClient()
         {
             // Release the socket.    
@@ -92,6 +111,10 @@ namespace BLE_Drive_UI.src
             }
         }
 
+        /// <summary>
+        /// Send string data
+        /// </summary>
+        /// <param name="data">String data</param>
         public void sendDataTCP(String data)
         {
             try
@@ -109,40 +132,24 @@ namespace BLE_Drive_UI.src
             }
         }
 
+        /// <summary>
+        /// Send computed IMU data as Bytes
+        /// </summary>
+        /// <param name="sensorID">ID corresponding to IMU Data </param>
+        /// <param name="data">IMU data</param>
         internal void sendDataTCP(int sensorID, float[] data)
         {
             try
             {
-                if (_sender.Connected)
-                {
-                    //var floatArray1 = new float[] { 123.45f, 123f, 45f, 1.2f, 34.5f };
-
-                    // create a byte array and copy the floats into it...
-                    //Console.WriteLine(1);
-                    var byteArray = new Byte[1 + 4 + data.Length * 4];
-                    //Console.WriteLine(2);
-                    byteArray[0] = 0x55;
-                    //Console.WriteLine(byteArray.Length);
-                    //Console.WriteLine(BitConverter.GetBytes(sensorID).Length);
-                    Buffer.BlockCopy(BitConverter.GetBytes(sensorID), 0, byteArray, 1, BitConverter.GetBytes(sensorID).Length);
-                    //Console.WriteLine(3);
-                    Buffer.BlockCopy(data, 0, byteArray, 5, data.Length* 4);
-                    //Console.WriteLine(4);
-                    //// create a second float array and copy the bytes into it...
-                    //var floatArray2 = new float[byteArray.Length / 4];
-                    //Buffer.BlockCopy(byteArray, 0, floatArray2, 0, byteArray.Length);
-
-
-
-                    //Byte[] packet = new byte[1 + BitConverter.GetBytes(sensorID).Length];
-                    //packet[0] = 0x55;
-                    //packet.Concat(BitConverter.GetBytes(sensorID));
-                    //packet.Concat();
-                    //packet[1] = 
-                    //Buffer.BlockCopy(BitConverter.GetBytes(sensorID), 0, packet, 1 , BitConverter.GetBytes(sensorID).Length);
-                    //Buffer.BlockCopy(data,0,packet,1+BitConverter.GetBytes(sensorID).Length, BitConverter.GetBytes(data).Length)
-                    int bytesSent = _sender.Send(byteArray);
-                }
+                var byteArray = new Byte[1 + 4 + data.Length * 4];
+                //set Overhead
+                byteArray[0] = 0x55;
+                //Copy SensorID to Bytearray
+                Buffer.BlockCopy(BitConverter.GetBytes(sensorID), 0, byteArray, 1, BitConverter.GetBytes(sensorID).Length);
+                //Copy data to Bytearray
+                Buffer.BlockCopy(data, 0, byteArray, 5, data.Length * 4);
+                //Send bytearray
+                sendDataTCP(byteArray);
             }
             catch (System.Net.Sockets.SocketException e)
             {
@@ -150,12 +157,17 @@ namespace BLE_Drive_UI.src
             }
         }
 
+        /// <summary>
+        /// Send Bytearray via TCP connection
+        /// </summary>
+        /// <param name="data">Bytearray to send</param>
         public void sendDataTCP(Byte[] data)
         {
             try
             {
                 if (_sender.Connected)
                 {
+                    //Send if connection exists
                     int bytesSent = _sender.Send(data);
                 }
             }
@@ -165,24 +177,41 @@ namespace BLE_Drive_UI.src
             }
         }
 
+        /// <summary>
+        /// Create interpretable bytearray from String
+        /// </summary>
+        /// <param name="stringBuffer">String to send</param>
+        /// <returns></returns>
         private String ToOutgoingPacket(String stringBuffer)
         {
+            //Add overhead
             stringBuffer.Insert(0, Encoding.Default.GetString(new Byte[] { 0x55 }));
-            //stringBuffer.Insert(11, Encoding.Default.GetString('\r'));
+
+            //Append Frame end
             stringBuffer += '\r';
             stringBuffer += '\n';
             return stringBuffer;
         }
 
-        private Byte[] ToOutgoingPacket(Byte[] stringBuffer, UInt16 len)
+        /// <summary>
+        /// Create interpretable Bytearray from Bytearray
+        /// </summary>
+        /// <param name="buffer">Bytearray to send</param>
+        /// <param name="len">length of packet</param>
+        /// <returns></returns>
+        private Byte[] ToOutgoingPacket(Byte[] buffer, UInt16 len)
         {
             var res = new Byte[len + 1];
             res[0] = 0x55;
-            stringBuffer.CopyTo(res, 1);
+            buffer.CopyTo(res, 1);
 
             return res;
         }
 
+        /// <summary>
+        /// This function notifies the user via the GUI
+        /// </summary>
+        /// <param name="status"></param>
         protected virtual void OnStatusChanged(String status)
         {
             StatusChangedEventArgs e = new StatusChangedEventArgs();
@@ -196,6 +225,10 @@ namespace BLE_Drive_UI.src
             }
         }
 
+        /// <summary>
+        /// This function notifies the Driver if the TCP connection was succesfully established
+        /// </summary>
+        /// <param name="connected"></param>
         protected virtual void OnConnectedChanged(bool connected)
         {
             Connected = connected;

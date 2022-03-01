@@ -10,6 +10,9 @@ using System.Threading.Tasks;
 
 namespace BLE_Drive_UI.Domain
 {
+    /// <summary>
+    /// Used to notify the user and to write entries to the logfile
+    /// </summary>
     public class StatusChangedEventArgs : EventArgs
     {
         public BLEDeviceInformation DeviceInformation { get; set; }
@@ -17,17 +20,26 @@ namespace BLE_Drive_UI.Domain
         public DateTime Timestamp { get; set; }
     }
 
+    /// <summary>
+    /// Used to write entries to the logfile
+    /// </summary>
     public class AddLogEntryEventArgs : EventArgs
     {
         public String LogEntry { get; set; }
     }
 
+    /// <summary>
+    /// Used to pass deviceinformation and connectionstatus to Mainwindow
+    /// </summary>
     public class ConnectedChangedEventArgs : EventArgs
     {
         public BLEDeviceInformation DeviceInformation { get; set; }
         public bool Status { get; set; }
     }
 
+    /// <summary>
+    /// Used to pass IMU data
+    /// </summary>
     public class ImuDataEventArgs : EventArgs
     {
         //public byte calib { get; set; }
@@ -46,12 +58,9 @@ namespace BLE_Drive_UI.Domain
         //public float Gyrz { get; set; }
     }
 
-    //public class changeLabelEventArgs : EventArgs
-    //{
-    //    public String label { get; set; }
-    //    public String value { get; set; }
-    //}
-
+    /// <summary>
+    /// Used to notify all instances if a tcp connection was closed or established
+    /// </summary>
     public class TcpConnectEventArgs : EventArgs
     {
         public bool Connected { get; set; }

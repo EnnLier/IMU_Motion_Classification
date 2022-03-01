@@ -19,57 +19,60 @@ namespace BLE_Drive_UI
 {
     public partial class mw_form : Form
     {
+        //BLE related objects
         private BLEwatcher _BLEwatcher;
         private BLEdriver _BLEdriver;
-        //private BLEhub _BLEdriver;
-        private static int _maxNumOfChartValues = 200;
-        private int _currentChartValue = 0;
 
+        //Number of values allowed in plot
+        private static int _maxNumOfChartValues = 200;
+        //current value to write to plot
+        private int _currentChartValue = 0;
+        //Mutex for plot
         private object m_chartLock = new object();
 
-        //private Thread DataPlotThread;
+        //Timer which update Plot, Battery and Calibrationvalues
         private System.Windows.Forms.Timer PlotDataTimer = new System.Windows.Forms.Timer();
         private System.Windows.Forms.Timer UpdateBatteryTimer = new System.Windows.Forms.Timer();
         private System.Windows.Forms.Timer UpdateCalibrationLabelTimer = new System.Windows.Forms.Timer();
 
+        //Lists of Forms to ease enabling and disabling
         private List<Chart> _ChartList;
         private List<System.Windows.Forms.Label> _CalibLabelList;
         private List<System.Windows.Forms.Panel> _BatteryPanelList;
         private List<System.Windows.Forms.Label> _BatteryLabelList;
         private List<System.Windows.Forms.Button> _ButtonList;
-
         private List<Control> _FrontDeviceControlList;
         private List<Control> _BackDeviceControlList;
         private List<List<Control>> _DeviceControlList;
 
+        //Logwriter
         private LogWriter _logWriter;
 
+        /// <summary>
+        /// Create all objects and initialize Mainwindow.
+        /// </summary>
         public mw_form()
         {
             _logWriter = new LogWriter();
             _BLEwatcher = new BLEwatcher();
             _BLEdriver = new BLEdriver();
-            //_BLEdriver = new BLEhub();
+
+            //Register eventhandler
             _BLEdriver.StatusChanged += BLEdriver_StatusChanged;
             _BLEdriver.ConnectedChanged += BLEDriver_ConnectedChanged;
             _BLEdriver.WriteLogEntry += OnLogfileEntry;
-            //_BLEdriver.ChangeLabel += Form_ChangeLabel;
+
+            //Initialize Mainwindow
             InitializeComponent();
 
+            //Initially disable most forms
             cb_SaveToFile.Enabled = false;
             cb_StreamTCP.Enabled = false;
             cb_plotAcc.Enabled = false;
             b_recalibrate.Enabled = false;
             p_frontBatteryPanel.Enabled = false;
-            //p_frontCalibPanel.Visible = false;
-            //p_backCalibPanel.Visible = false;
-            //ch_frontDataPlot.Visible = false;
-            //ch_backDataPlot.Visible = false;
-            //p_backBatteryPanel.Visible = false;
-            //p_frontBatteryPanel.Visible = false;
-            //l_batteryLabelBack.Visible = false;
-            //l_batteryLabelFront.Visible = false;
 
+            //Fill Form lists with forms
             _ChartList = new List<Chart>() { ch_frontDataPlot, ch_backDataPlot };
             _CalibLabelList = new List<System.Windows.Forms.Label>() { l_sysFront, l_gyrFront, l_accFront, l_magFront, l_sysBack, l_gyrBack, l_accBack, l_magBack};
             _BatteryPanelList = new List<System.Windows.Forms.Panel>() { p_frontBatteryPanel, p_backBatteryPanel };
@@ -79,6 +82,7 @@ namespace BLE_Drive_UI
             _BackDeviceControlList = new List<Control>() { ch_backDataPlot, p_backCalibPanel, p_backBatteryPanel, l_batteryLabelBack };
             _DeviceControlList = new List<List<Control>>() { _FrontDeviceControlList, _BackDeviceControlList };
 
+
             foreach (var List in _DeviceControlList)
             {
                 foreach ( var control in List)
@@ -87,6 +91,7 @@ namespace BLE_Drive_UI
                     control.Visible = false;
                 }
             }
+            //Initialize Timer
             PlotDataTimer.Tick += new EventHandler(update_dataChart);
             PlotDataTimer.Interval = 25;
             PlotDataTimer.Enabled = false;
@@ -97,6 +102,7 @@ namespace BLE_Drive_UI
             UpdateCalibrationLabelTimer.Tick += new EventHandler(update_calibLabel);
             UpdateCalibrationLabelTimer.Interval = 500;
 
+            //Create Chart for plotting
             initialize_dataChart(this.ch_frontDataPlot);
             initialize_dataChart(this.ch_backDataPlot);
         }
@@ -106,20 +112,19 @@ namespace BLE_Drive_UI
             _logWriter.Save();
         }
 
-
+        /// <summary>
+        /// This callbakc function is called if a BLE device Connects or Disconnects from the driver
+        /// </summary>
+        /// <param name="sender">Device Connecting/Disconnecting</param>
+        /// <param name="args">Deviceinformation</param>
         private void BLEDriver_ConnectedChanged(object sender, ConnectedChangedEventArgs args)
         {
-            //pb_Refresh_List.BeginInvoke((Action)(() => pb_Refresh_List_Click(null,null)));
+            //Current status - Connected/Disconnected
             var connected = args.Status;
+            //Sensor ID
             var id = args.DeviceInformation.SensorID;
-            //Console.WriteLine(args.deviceInformation.SensorID);
-            //Check if Controls need to be invoked to enable or disable them and act accordingly
-            //var i = b_recalibrate.InvokeRequired == true ? b_recalibrate.Invoke((Action)(() => this.b_recalibrate.Enabled = connected ? true : false)) : this.b_recalibrate.Enabled = connected ? true : false;
-            //i = cb_plotAcc.InvokeRequired == true ? cb_plotAcc.Invoke((Action)(() => this.cb_plotAcc.Enabled = connected ? true : false)) : this.cb_plotAcc.Enabled = connected ? true : false;
-            //i = p_frontBatteryPanel.InvokeRequired == true ? p_frontBatteryPanel.Invoke((Action)(() => this.p_frontBatteryPanel.Enabled = connected ? true : false)) : this.p_frontBatteryPanel.Enabled = connected ? true : false;
-            //i = cb_SaveToFile.InvokeRequired == true ? cb_SaveToFile.Invoke((Action)(() => this.cb_SaveToFile.Enabled = connected ? true : false)) : this.cb_SaveToFile.Enabled = connected ? true : false;
-            //i = cb_StreamTCP.InvokeRequired == true ? cb_StreamTCP.Invoke((Action)(() => this.cb_StreamTCP.Enabled = connected ? true : false)) : this.cb_StreamTCP.Enabled = connected ? true : false;
-            Console.WriteLine("Connected devices: " + _BLEdriver.Connected);
+
+            //Enable or disable device relevant buttons according to connection status
             _ButtonList[id].Invoke((Action)delegate
             {
                 foreach (var control in _DeviceControlList[id])
@@ -128,7 +133,9 @@ namespace BLE_Drive_UI
                     control.Visible = connected;
                 }
             });
-            if (_BLEdriver.Connected == 0) //All devices disconnected
+
+            //All devices disconnected. Stop all timer and disable all GUI elements
+            if (_BLEdriver.Connected == 0) 
             {
                 _BatteryPanelList[id].BeginInvoke((Action)(() => this.UpdateBatteryTimer.Stop()));
                 _CalibLabelList[id].BeginInvoke((Action)(() => this.UpdateCalibrationLabelTimer.Stop()));
@@ -152,10 +159,8 @@ namespace BLE_Drive_UI
             if (connected)
             {
                 _ButtonList[id].BeginInvoke((Action)(() => _ButtonList[id].Text = _ButtonList[id].Text.Replace("Connect","Disconnect")));
-                //_BatteryPanelList[deviceInformation.SensorID].BeginInvoke((Action)(() => update_battery(null, null)));
                 _BatteryPanelList[id].BeginInvoke((Action)(() => this.UpdateBatteryTimer.Start()));
                 _CalibLabelList[id].BeginInvoke((Action)(() => this.UpdateCalibrationLabelTimer.Start()));
-
             }
             else
             {
@@ -163,31 +168,39 @@ namespace BLE_Drive_UI
             }
         }
 
-
+        /// <summary>
+        /// Callback function of Battery timer. Updates Batterylevel on GUI
+        /// </summary>
+        /// <param name="sender">Timer which is calling this function</param>
+        /// <param name="e">Empty args</param>
         private void update_battery(object sender, System.EventArgs e)
         {
+            //Update Form for each device
             foreach (var device in _BLEdriver.ConnectedDeviceInformationList)
             {
+                //Get Batterylevel and Sensorid of each device
                 var level = device.BatteryLevel;
                 var id = device.SensorID;
 
+                //Change size and color of battery diagram and change displayed value
                 _BatteryLabelList[id].Text = level.ToString() + "%";
                 _BatteryPanelList[id].Width = level;
+                //Orange
                 if (level <= 30 && level > 10)
                 {
                     _BatteryPanelList[id].BackColor = Color.FromArgb(255, 127, 0);
                 }
+                //Red
                 else if (level <= 10)
                 {
                     _BatteryPanelList[id].BackColor = Color.FromArgb(255, 0, 0);
                 }
+                //Green
                 else
                 {
                     _BatteryPanelList[id].BackColor = Color.FromArgb(0, 127, 0);
                 }
             }
-            
-            
         }
 
         private void Mainwindow_Load(object sender, EventArgs e)
@@ -195,11 +208,18 @@ namespace BLE_Drive_UI
             
         }
 
+        /// <summary>
+        /// Callback function of refresh button. Updates displayed list in GUI with updated list of BLEwatcher
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void pb_Refresh_List_Click(object sender, EventArgs e)
         {
+            //Clear current display
             this.lv_Device_List.Items.Clear();
             lock(_BLEwatcher.mListLock)
             {
+                //Show only relevant information of each devices listed in devicelist
                 foreach (var device in _BLEwatcher.deviceList)
                 {
                     if (String.IsNullOrEmpty(device.Name)) continue;
@@ -212,34 +232,45 @@ namespace BLE_Drive_UI
             
         }
 
+        /// <summary>
+        /// Callback function of Connect button. Connect to and Disconnect from selected device. Acts as a callback function for to Buttons Connect Front and Connect Back
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void pb_connect_Click(object sender, EventArgs e)
         {
             try
             {
+                //Return if Driver is currently connecting
                 if (_BLEdriver.Busy) return;
-                //var button = (Button)sender;
+
+                // id is 0 for front and 1 for back. This ID acts also as the sensorID 
                 var id = _ButtonList.IndexOf((Button)sender);
                 
+                //Connect
                 if (_ButtonList[id].Text.Contains("Connect "))
                 {
+                    //Get selected device from list
                     var selection = (BLEDeviceInformation)this.lv_Device_List.SelectedItems[0].Tag;
 
                     //Make shallow copy of object to not change device_list entries on connect
                     BLEDeviceInformation selectedDevice = selection.Clone();
 
+                    //ID corresponding to front or Back sensor now defines sensoID
                     selectedDevice.SensorID = id;
 
+                    //Connect to this device if driver exists
                     if (_BLEdriver != null)
                     {
                         _BLEdriver.ConnectDevice(selectedDevice);
                     }
                     //initialize_dataChart(_ChartList[id]);
                 }
+                //Disconnect
                 else if (_ButtonList[id].Text.Contains( "Disconnect"))
                 {
                     _BLEdriver.Disconnect(_BLEdriver.ConnectedDeviceInformationList.Find(item => item.SensorID == id));
                 }
-                //pb_connect.Enabled = false;
             }
             catch (System.ArgumentOutOfRangeException)
             {
@@ -247,52 +278,54 @@ namespace BLE_Drive_UI
             }
         }
 
-
+        /// <summary>
+        /// Callback function for Calib label timer. This function updates the displayed calirbation values 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void update_calibLabel(object sender, EventArgs e)
         {
+            //Update each connected device
             foreach (var device in _BLEdriver.ConnectedDeviceInformationList)
             {
+                //Get calibration value
                 var calib = device.Calibration;
-                
+                //Get sensor ID
                 var id = device.SensorID;
 
+                //Write Value to GUI
                 _CalibLabelList[4 * id + 0].Text = calib[0].ToString();
                 _CalibLabelList[4 * id + 1].Text = calib[1].ToString();
                 _CalibLabelList[4 * id + 2].Text = calib[2].ToString();
                 _CalibLabelList[4 * id + 3].Text = calib[3].ToString();
             }
-            
         }
 
+        /// <summary>
+        /// This Callback function updates the information panel on the GUI
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void BLEdriver_StatusChanged(object sender, StatusChangedEventArgs e)
         {
+            //Get timestamp
             var timestamp = e.Timestamp.ToString("HH:mm:ss");
-            //if(!_BLEdriver.Connected)
-            //{
-            //    cb_plotAcc.Checked = false;
-            //}
+
+            //Write message to Logfile
             _logWriter.Write(e.Status);
+
+            //Display Message on GUI
             if (l_Driver_Status.InvokeRequired)
                 l_Driver_Status.Invoke((Action)delegate { this.l_Driver_Status.Text = timestamp + "      " + e.Status; });
             else
                 this.l_Driver_Status.Text = timestamp + "      " + e.Status;
-            //catch(System.InvalidOperationException)
-            //{
-                
-            //    //cb_StreamTCP.Invoke((Action)delegate
-            //    //{
-            //    //    this.cb_StreamTCP.Enabled = _BLEdriver.Connected == true ? true : false;
-            //    //    this.cb_SaveToFile.Enabled = _BLEdriver.Connected == true ? true : false;
-            //    //    this.cb_plotAcc.Enabled = _BLEdriver.Connected == true ? true : false;
-            //    //    this.b_recalibrate.Enabled = _BLEdriver.Connected == true ? true : false;
-            //    //    this.p_BatteryPanel.Enabled = _BLEdriver.Connected == true ? true : false;
-
-            //    //});
-            //}
-            
         }
 
-
+        /// <summary>
+        /// Callback function for Stream TCP checkbox. Enables and disables TCP streaming
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void cb_StreamTCP_CheckedChanged(object sender, EventArgs e)
         {
             if (this.cb_StreamTCP.Checked)
@@ -305,30 +338,45 @@ namespace BLE_Drive_UI
             }
         }
 
+        /// <summary>
+        /// Callback function for Plot data checkbox. Enables and disable Plotting of incoming accelaration date of al connected devices
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void cb_plotAcc_CheckedChanged(object sender, EventArgs e)
         {
             if (this.cb_plotAcc.Checked)
             {
+                //Plot data of all connected devices
                 foreach (var device in _BLEdriver.ConnectedDeviceInformationList)
                 {
+                    //get sensor id
                     var id = device.SensorID;
+                    //set current value to plot to zero
                     _currentChartValue = 0;
+                    //Clear chart corresponding to sensorID
                     _ChartList[id].Series[0].Points.Clear();
                     _ChartList[id].Series[1].Points.Clear();
                     _ChartList[id].Series[2].Points.Clear();
                 }
+                //Plotting is done synchonously, so start the timer here
                 PlotDataTimer.Enabled = true;
                 this.PlotDataTimer.Start();
             }
             else
             {
+                //stop timer if checkbox is unchecked
                 PlotDataTimer.Enabled = false;
                 this.PlotDataTimer.Stop();
 
             }
         }
 
-
+        /// <summary>
+        /// Callback function for Save data checkbox. Enables and disables data saving of all connected devices
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void cb_SaveToFile_CheckedChanged(object sender, EventArgs e)
         {
             if (this.cb_SaveToFile.Checked)
@@ -341,10 +389,16 @@ namespace BLE_Drive_UI
             }
         }
 
-
+        /// <summary>
+        /// Callback function of Recalibrate Button. Allows to overwrite the currently locally save calibration data on each device
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void b_recalibrate_Click(object sender, EventArgs e)
         {
+            //get device from list
             var selectedDevice = (BLEDeviceInformation)this.lv_Device_List.SelectedItems[0].Tag;
+            //write command to device
             _BLEdriver.Recalibrate_imu(selectedDevice);
         }
 
@@ -353,6 +407,10 @@ namespace BLE_Drive_UI
 
         }
 
+        /// <summary>
+        /// Initialize Chart to Plot sensordata
+        /// </summary>
+        /// <param name="chart"></param>
         private void initialize_dataChart(Chart chart)
         {
             chart.Series.Clear();
@@ -422,63 +480,26 @@ namespace BLE_Drive_UI
             chart.Series[2].BorderWidth = 2;
         }
 
-        //private void PlotData_ProgressChanged(object sender, ProgressChangedEventArgs e)
-        //{
-        //    var data = _BLEdriver.GetDataToPlot();
-        //    ch_dataPlot.Series[0].Points.AddXY(_currentChartValue, data[0]);
-        //    ch_dataPlot.Series[1].Points.AddXY(_currentChartValue, data[1]);
-        //    ch_dataPlot.Series[2].Points.AddXY(_currentChartValue, data[2]);
-        //    ch_dataPlot.Series[3].Points.AddXY(_currentChartValue, data[3]);
-        //    ch_dataPlot.Series[4].Points.AddXY(_currentChartValue, data[4]);
-        //    ch_dataPlot.Series[5].Points.AddXY(_currentChartValue, data[5]);
-        //    _currentChartValue++;
-        //    if (_currentChartValue >= _maxNumOfChartValues)
-        //    {
-        //        _currentChartValue = 0;
-        //        ch_dataPlot.Series[0].Points.Clear();
-        //        ch_dataPlot.Series[1].Points.Clear();
-        //        ch_dataPlot.Series[2].Points.Clear();
-        //        ch_dataPlot.Series[3].Points.Clear();
-        //        ch_dataPlot.Series[4].Points.Clear();
-        //        ch_dataPlot.Series[5].Points.Clear();
-        //    }
-        //}
-
-        //private void PlotData(object sender, DoWorkEventArgs e)
-        //{
-        //    Console.WriteLine("Thread Started");
-        //    Stopwatch PlotTickWatch = new Stopwatch();
-        //    PlotTickWatch.Start();
-        //    //this.ch_dataPlot.BeginInvoke((Action)delegate
-        //    //{
-        //        while (_plotting)
-        //        {
-        //            PlotDataBackgroundWorker.ReportProgress(0);
-        //            while(PlotTickWatch.Elapsed.TotalMilliseconds <= 10)
-        //            {
-        //                Thread.Sleep(1);
-        //            }
-        //            PlotTickWatch.Restart();
-        //        }
-        //    //});
-        //}
-
-        //Stopwatch watch = new Stopwatch();
+        /// <summary>
+        /// Callback function for Update Datachart Timer. Everytime this function is called a new datapoint is added to the chart
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void update_dataChart(object sender, System.EventArgs e)
         {
-            //Console.WriteLine(watch.ElapsedMilliseconds);
-            //watch.Restart();
-            //if(!_BLEdriver.Connected) return;
-
+            //Plot data for each connected device
             foreach(var device in _BLEdriver.ConnectedDeviceInformationList)
             {
                 lock (m_chartLock)
                 {
+                    //Get data and Corresponding sensorID
                     var data = device.Data;
                     var id = device.SensorID;
+                    //Plot Accelerationdata - [0 until 3] Quaternion, [4 until 6] Acceleration, [7 until 9] Gyroscope
                     _ChartList[id].Series[0].Points.AddXY(_currentChartValue, data[4]);
                     _ChartList[id].Series[1].Points.AddXY(_currentChartValue, data[5]);
                     _ChartList[id].Series[2].Points.AddXY(_currentChartValue, data[6]);
+                    //If maximum nunmber of values to plot is exceeded, clear all charts 
                     if (_currentChartValue >= _maxNumOfChartValues)
                     {
                         _ChartList[id].Series[0].Points.Clear();
@@ -487,15 +508,27 @@ namespace BLE_Drive_UI
                     }
                 }
             }
+            //...and start plotting from the beginning
             if (_currentChartValue >= _maxNumOfChartValues) _currentChartValue = 0;
+            // Increment value
             _currentChartValue++;
         }
 
+        /// <summary>
+        /// Callback function for closing form. This function saves the logfile to a .txt file
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void mw_form_FormClosing(object sender, FormClosingEventArgs e)
         {
             _logWriter.Save();
         }
 
+        /// <summary>
+        /// This callback function adds an entry to the Logfile
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         protected virtual void OnLogfileEntry(object sender, AddLogEntryEventArgs e)
         {
             _logWriter.Write(e.LogEntry);

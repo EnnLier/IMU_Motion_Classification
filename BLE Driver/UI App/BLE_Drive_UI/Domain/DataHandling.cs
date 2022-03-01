@@ -9,26 +9,38 @@ using System.Threading.Tasks;
 
 namespace BLE_Drive_UI.Domain
 {
+    /// <summary>
+    /// Tihs class provides a very simple string buffer with only necessary functions
+    /// </summary>
     public class StringBuffer
     {
+        //Length of Buffer
         private static UInt16 _bufferLength;
+        //Internal Buffer of strings
         private static String[] SBuffer;
-
+        //Number of elements in Buffer
         public UInt16 Count { get; private set; }
+        //Bufferstatus
         public bool Active { get; set; }
 
+        /// <summary>
+        /// Create Buffer with an initial Count of 0
+        /// </summary>
+        /// <param name="bufferlength">Number of elements allowed in Buffer</param>
         public StringBuffer(UInt16 bufferlength)
         {
             _bufferLength = bufferlength;
-
             SBuffer = new String[_bufferLength];
-
             Count = 0;
         }
 
+        /// <summary>
+        /// Add element to Buffer
+        /// </summary>
+        /// <param name="data">This string is added to Buffer</param>
         public void Add(String data)
         {
-            //Console.WriteLine(data);
+            //Add element only if Buffer is not full
             if (Count <= _bufferLength)
             {
                 SBuffer[Count] = data;
@@ -40,6 +52,10 @@ namespace BLE_Drive_UI.Domain
             }
         }
 
+        /// <summary>
+        /// This function return Buffer and clears it afterwards
+        /// </summary>
+        /// <returns></returns>
         public String[] Flush()
         {
             var tmp = new String[_bufferLength];
@@ -50,6 +66,9 @@ namespace BLE_Drive_UI.Domain
             return tmp;
         }
 
+        /// <summary>
+        /// This function clears the buffer and fills it with empty strings
+        /// </summary>
         public void Clear()
         {
             for (int i = 0; i < Count; i++)
@@ -59,39 +78,56 @@ namespace BLE_Drive_UI.Domain
         }
     }
 
- 
+
+    /// <summary>
+    /// This class provides a syncronous solution for a data saver. It utilizes two Buffers which call themselves successively in a new thread. This provides quasi deterministic runtimes and prevents bottlenecking due to slow harddrive speeds
+    /// </summary>
     public class SyncDataSaver
     {
+        //File settings
         private static String _path;
         private static UInt16 _bufferLength;
 
+        //Stringbuffers
         private StringBuffer buffer1;
         private StringBuffer buffer2;
 
+        //data Mutex
         private static object mThreadLock = new object();
 
+        //Threads
         private Thread Buffer1PollingThread;
         private Thread Buffer2PollingThread;
+
+        //Stopwatch to create timestamps in measurements
         private Stopwatch Watch;
 
+        //Rate of this buffer
         private static double _rate;
+        //Cumulative rate to provide even spacing between datapoints
         private double cumulativeRate;
 
+        //Actual Data to save. Currently in a static array with two entries for each sensor
         private String[] dataToSave = new string[2]{ String.Empty,String.Empty};
-        private String timeStamp = String.Empty;
 
+        //State variables
         public bool isSaving = false;
-
         public bool Active = false;
+        private bool busy = false;
 
+        /// <summary>
+        /// Constructor of datasaver class. Initialize components
+        /// </summary>
+        /// <param name="bufferLength">Length of buffer</param>
+        /// <param name="rate">Rate of buffer in ms</param>
         public SyncDataSaver(UInt16 bufferLength, double rate)
         {
-
             var dir = Directory.GetParent(Directory.GetParent(Directory.GetCurrentDirectory()).FullName).FullName;
             Console.WriteLine(dir);
 
             _path = dir + @"\Data\";
 
+            //Create data folder if currently not existing
             if (!Directory.Exists(_path))
                 Directory.CreateDirectory(_path);
 
@@ -105,43 +141,55 @@ namespace BLE_Drive_UI.Domain
             buffer2.Active = false;
 
             Watch = new Stopwatch();
-
         }
 
+        /// <summary>
+        /// This functions starts saving the added data. Here all state flags are set/reset and the initial pollingthread gets started
+        /// </summary>
         public void start()
         {
             Console.WriteLine("Start Saving....");
+            //Wait for Pollingthreads to finish
             waitForThreadsToFinish();
-            //dataToSave = String.Empty;
+
+            //Reset state variables
             Active = true;
             isSaving = true;
             buffer1.Active = true;
             buffer2.Active = false;
 
+            //first timestamp starts at zero
             cumulativeRate = 0;
 
+            //start pollingthread for first buffer
             Buffer1PollingThread = new Thread(Buffer1Polling);
-            //Buffer2PollingThread = new Thread(Buffer2Polling);
-
             Buffer1PollingThread.Start();
-            //Buffer2PollingThread.Start();
-
-
 
             Console.WriteLine("PollingThread started....");
         }
 
+        /// <summary>
+        /// This function stops the datasaving
+        /// </summary>
         public void stop()
         {
             isSaving = false;
-            //dataToSave = String.Empty;
+            //Empty and save the rest of the data in the currently active buffer
             flush();
+            //reset watch
             Watch.Reset();
+            //Wait for Pollingthreads to finish
             waitForThreadsToFinish();
+            //clear current data
             dataToSave = new String[]{ String.Empty,String.Empty};
             Active = false;
         }
 
+        /// <summary>
+        /// Add data to get saved. Data is organised in an array, numbered by their sensor ID
+        /// </summary>
+        /// <param name="id">correscponding sensor ID</param>
+        /// <param name="data">Actual data as a string to save </param>
         public void addData(int id, String data)
         {
             lock (mThreadLock)
@@ -150,36 +198,53 @@ namespace BLE_Drive_UI.Domain
             }
         }
 
+        /// <summary>
+        /// This function should be called in a new thread. It polls the provided data at a set rate and fills the first Buffer each time. This function is always the first thats active and always corresponds to Buffer 1
+        /// </summary>
         private void Buffer1Polling()
         {
+            //Wait for first value to arrive
             while (!isSaving || dataToSave.Count(p => p == String.Empty) == dataToSave.Length) { Thread.Sleep(1); }
+            //Start stopwatch
             Watch.Start();
+            //As long as the saving flag is set
             while (isSaving)
             {
-                //if (!buffer1.Active) { var n = _rate / 5; Thread.Sleep((int)n); continue; }
+                //get elapsed time
                 double t = Watch.Elapsed.TotalMilliseconds;
+                //if time exceeded threshhold for next value
                 if (t >= cumulativeRate)
                 {
+                    //calulate stopwatch threshold for polling next value
                     cumulativeRate += _rate;
+                    //get timestamp
                     String timestamp = (t / 1000).ToString("0.0000");
 
                     lock (mThreadLock)
                     {
+                        //Add data and timestamp to Buffer
                         buffer1.Add(timestamp + dataToSave[0] + dataToSave[1]);
                     }
                     if (buffer1.Count >= _bufferLength)
                     {
+                        //switch to second buffer if first buffer is full
                         buffer1.Active = false;
                         buffer2.Active = true;
+                        //start Pollingthread for second buffer
                         Buffer2PollingThread = new Thread(Buffer2Polling);
                         Buffer2PollingThread.Start();
+                        //save first buffer, while second Buffer takes over the polling
                         save(buffer1);
+                        //return
                         return;
                     }
                 }
             }
         }
 
+        /// <summary>
+        /// This function should be called in a new thread, as soon as the first pollingthread finishes. Check Buffer1Polling for detailed functionality
+        /// </summary>
         private void Buffer2Polling()
         {
             while (isSaving)
@@ -207,20 +272,28 @@ namespace BLE_Drive_UI.Domain
             }
         }
 
+        /// <summary>
+        /// This function waits for all pollingthreads to finish
+        /// </summary>
+        /// <returns>True if all threads succsesfully finished</returns>
         private bool waitForThreadsToFinish()
         {
             try
             {
+                //Check if Pollingthread 1 is active
                 if (Buffer1PollingThread != null)
                 {
+                    //Wait for it to finish
                     while (Buffer1PollingThread.IsAlive)
                     {
                         Console.WriteLine(" Threads still alive....");
                         Thread.Sleep(200);
                     }
                 }
+                //Check if Pollingthread 2 is active
                 if (Buffer2PollingThread != null)
                 {
+                    //wait for it to finish
                     while (Buffer2PollingThread.IsAlive)
                     {
                         Console.WriteLine(" Threads still alive....");
@@ -236,7 +309,10 @@ namespace BLE_Drive_UI.Domain
             return true;
         }
 
-        private bool busy = false;
+        /// <summary>
+        /// Save buffer to .txt file
+        /// </summary>
+        /// <param name="buffer">Stringbuffer to save to file</param>
         private void save(StringBuffer buffer)
         {
             busy = true;
@@ -245,6 +321,9 @@ namespace BLE_Drive_UI.Domain
             busy = false;
         }
 
+        /// <summary>
+        /// Save currently active Buffer
+        /// </summary>
         private void flush()
         {
             while (busy) { Thread.Sleep(20); }
@@ -256,12 +335,9 @@ namespace BLE_Drive_UI.Domain
             {
                 save(buffer2);
             }
-            //while (SavingThread.IsAlive) { }
-            //SavingThread.Start();
         }
-
-        
     }
+
     public class DoubleDataBufferAsync
     {
         //private float[][] fBuffer1;
