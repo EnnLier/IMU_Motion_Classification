@@ -48,9 +48,10 @@ public class TCPListener : MonoBehaviour
         _localEndPoint = new IPEndPoint(_ipAddress, 11000);
 
         //Front = GameObject.Find("skateboard/Axis_Front");
-        Front = this.transform.GetChild(0).gameObject;
+        Front = this.gameObject;
         //Back = GameObject.Find("skateboard/Axis_Back");
-        Back = this.transform.GetChild(1).gameObject;
+        //Back = this.transform.GetChild(1).gameObject;
+        Back = this.gameObject;
 
         WaitingThread = new Thread(StartServer);
         WaitingThread.Start();
@@ -195,10 +196,26 @@ public class TCPListener : MonoBehaviour
 
                 Quaternion BodyPose = new Quaternion(-quatZ, -quatX, -quatY, quatW);
 
-                EulerAngles.x = -BodyPose.eulerAngles.x;
-                EulerAngles.y = BodyPose.eulerAngles.z;
-                EulerAngles.z = BodyPose.eulerAngles.y;
+                //EulerAngles.x = -BodyPose.eulerAngles.x;
+                //EulerAngles.y = BodyPose.eulerAngles.z;
+                //EulerAngles.z = BodyPose.eulerAngles.y;
+                var x = -BodyPose.eulerAngles.x;
+                var y = BodyPose.eulerAngles.z;
+                var z = BodyPose.eulerAngles.y;
 
+                float angle = Mathf.PI;
+
+                Vector3 KS_f = new Vector3(x,y,z);
+                Vector4 KS_f_hom = new Vector4(x, y, z,1);
+                Matrix4x4 T = new Matrix4x4(new Vector4(1, 0, 0, 0), new Vector4(0, Mathf.Cos(angle), Mathf.Sin(angle), 0), new Vector4(0,- Mathf.Sin(angle), Mathf.Cos(angle), 0), new Vector4(0, 0, 0, 1));
+                Vector4 KS_dreh = T* KS_f_hom;
+
+
+                
+
+                EulerAngles.x = KS_dreh.x;
+                EulerAngles.y = KS_dreh.y;
+                EulerAngles.z = KS_dreh.z;
                 Front.transform.rotation = BodyPose;
             }
             if (IncomingDataBufferBack != null && IncomingDataBufferBack.Length == _numOfFloats)
