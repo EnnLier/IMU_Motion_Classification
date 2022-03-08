@@ -17,7 +17,7 @@
 #include <InternalFileSystem.h>
 
 #define CLIENT_NAME "BLE_windows"  
-#define HOST_NAME "IMU1"  
+#define HOST_NAME "IMU2"  
 
 #define FILENAME    "CalibrationValues.bin"
 
@@ -236,11 +236,14 @@ int errCount = 0;
 void loop() 
 {
   if (!connected) return;
-    sys, gyro, accel, mag = 0;
+    sys = 0;
+    gyro = 0;
+    accel = 0;
+    mag = 0;
     calib = 0x00;
     memset(bufferQuat, 0, 8);
     memset(bufferVect, 0, 6);
-    memset(tmp, 0, 22);
+    memset(tmp, 0, 21);
 
     bno->getCalibration(&sys, &gyro, &accel, &mag);
 
@@ -262,6 +265,8 @@ void loop()
 
     memcpy(&sendBuffer[0],&tmp[0],sizeof(sendBuffer));
 
+    // Serial.println(sendBuffer);
+
     if (bno->isFullyCalibrated() && !isCalibrated)
     {
       Serial.println("Calibration found");
@@ -272,10 +277,12 @@ void loop()
     if(elementsEqual(bufferQuat,8))   // Power cut off?
     {
       errCount++;
+      digitalWrite(CASE_LED_GREEN, LOW);
     }
     else
     {
       errCount = 0;
+      digitalWrite(CASE_LED_GREEN, HIGH);
     }
     if(errCount >= 200)
     {
@@ -294,6 +301,7 @@ void loop()
       bno->setMode(Adafruit_BNO055::OPERATION_MODE_IMUPLUS);
       load_calibration();
       errCount = 0;
+      digitalWrite(CASE_LED_GREEN, HIGH);
     }
 }
 
@@ -479,6 +487,8 @@ uint8_t get_battery_percent()
     return 5;
   else if (measuredvbat >= 3.27) 
     return 0;
+  else
+    return 0;
 }
 
 /**
@@ -534,10 +544,6 @@ void toBin(bool arr[],uint8_t n)
  */
 bool elementsEqual(uint8_t arr[],uint8_t len)
 {
-  if (len == 0)
-  {
-    len == sizeof(arr);
-  }
   for (int i = 0; i < len-1; i++) 
   {
     // Serial.println(arr[i] != arr[i++]);
