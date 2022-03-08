@@ -1,5 +1,5 @@
 # IMU_Motion_Classification
-The goal of this project is to determine skateboard stunts based on IMU data. The movement of the board is measured with up to two [Bosch BNO055](#bosch_bno055) IMUs, which are each mounted on an [Adafruit-Feather-Express](#adafruit-feather-express). To evaluate the data offline, the microcontroller is connected to a PC. This project contains a windows [driver](#ble-driver), which can connect to the microcontroller via Bluetooth Low Energy. After a connection is established, the GUI provides the possibility to plot (in GUI), save (local) and stream (via TCP) the incoming data. This project also provides a live [visualization](#visualization) of the measurments.
+The goal of this project is to determine skateboard stunts based on IMU data. The movement of the board is measured with up to two [Bosch BNO055](#bosch_bno055) IMUs, which are each mounted on an [Adafruit-Feather-Express](#adafruit-feather-express). To evaluate the data offline, the microcontroller is connected to a PC. This project contains a windows [driver](#ble-driver), which can connect to the microcontroller via Bluetooth Low Energy. After a connection is established, the GUI provides the possibility to plot (in GUI), save (local) and stream (via TCP) the incoming data. This project also provides a live [visualization](#visualization) of the measurments in Unity.
 
 ## Hardware
 ### Adafruit Feather Express
@@ -24,10 +24,10 @@ The [Adafruit Feather](#adafruit-feather-express) is able to to draw power via U
 <p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/src/Casing_bottom_below.png" alt="View from below"  width="600"></p>
 
 ## Adafruit Feather
-This folder contains the software for the Adafruit feather, written in c++. 
+This folder contains the software for the Adafruit feather, written in C++. In this project I used the [PlatformIO](https://platformio.org/) Plugin in Visual Studio Code to write and flash code to the device. Although those tasks would also be possible with the Arduino IDE, I would not recommend it. I had to perform minor tweeks in the BNO55 library (noted in deploy code for the Feather), which is easily accessible via the PlatformIO interface, but a real fight in Arduino IDE.
 
 ## BLE Driver
-Windows driver which is used to receive IMU data via BLE. Data is blindly streamed to specific TCP port
+The BLE Driver is completely written in C# and became quite a powerful and robust tool over the time.
 
 ## Data Evaluation
 Contains Matlab code to read data from .txt files. It also provides code for offline evaluation of the measurements.
