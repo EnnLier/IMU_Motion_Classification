@@ -25,7 +25,7 @@ This folder contains a 3D model of the prototype, which was used to design a cas
 
 <p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/src/Casing_bottom_below.png" alt="View from below"  width="600"></p>
 
-<p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Images/Sensorbundle.jpg" alt="Sensorbundle real"  width="600"></p>
+<p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Images/Sensor_bundles.jpg" alt="Sensorbundle real"  width="600"></p>
 
 
 ## Adafruit Feather
@@ -50,6 +50,7 @@ Saving the incoming data is implemented synchronously, since the asynchronous ap
 Contains Matlab code to read data from .txt files. It also provides code for offline evaluation of the measurements.
 
 ## Visualization
-Unity visualization of incoming IMU data
+This visualization allows you to check if the quaternion data is interpreted correctly. This Unity project contains a raw driver, which receives the IMU measurements via TCP connection. The overall idea is to recreate the actual skateboard movement based on the IMU data. This model could also be used to test if features for the classificator are able to recreate the movement and to check how well they describe a skateboard stunt. 
 
+<p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Images/Visualization_Skateboard.png" alt="Sensorbundle real"  width="600"></p>
 Version: unityhub://2020.3.16f1/049d6eca3c44
