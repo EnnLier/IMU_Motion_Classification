@@ -15,6 +15,8 @@ The [Adafruit Feather](#adafruit-feather-express) is able to to draw power via U
 <p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Images/LiPo.jpg" alt="LiPo Akku 3,7V JST" width="600"></p>
 
 ## Casing
+This folder contains a 3D model of the prototype, which was used to design a casing for the sensor bundle. Following some pictures of the 3D model, the casing and finally the actual prototype.
+
 <p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/src/Sensor_bundle.png" alt="Stacked sensor bundle" width="600"></p>
 
 <p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/src/Casing_open.png" alt="Sensorcasing" width="600"></p>
@@ -22,6 +24,9 @@ The [Adafruit Feather](#adafruit-feather-express) is able to to draw power via U
 <p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/src/Casing_closed.png" alt="Assembled sensor and its casing"  width="600"></p>
 
 <p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/src/Casing_bottom_below.png" alt="View from below"  width="600"></p>
+
+<p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Images/Sensorbundle.jpg" alt="Sensorbundle real"  width="600"></p>
+
 
 ## Adafruit Feather
 This folder contains the software for the Adafruit feather, written in C++. In this project I used the [PlatformIO](https://platformio.org/) Plugin in Visual Studio Code to write and flash code to the device. Although those tasks would also be possible with the Arduino IDE, I would not recommend it. I had to perform minor tweeks in the BNO55 library (noted in deploy code for the Feather), which is easily accessible via the PlatformIO interface, but a real fight in Arduino IDE.
