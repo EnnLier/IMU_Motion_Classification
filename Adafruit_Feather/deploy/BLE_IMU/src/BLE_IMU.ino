@@ -17,11 +17,11 @@
 #include <InternalFileSystem.h>
 
 #define CLIENT_NAME "BLE_windows"  
-#define HOST_NAME "IMU"  
+#define HOST_NAME "IMU1"  
 
 #define FILENAME    "CalibrationValues.bin"
 
-#define VBATPIN A6
+#define VBATPIN A6  
 #define CASE_LED_RED 6
 #define CASE_LED_GREEN 5
 
@@ -218,8 +218,8 @@ void onDisconnect(uint16_t conn_handle, uint8_t reason)
   advertise();
 }
 
-char sendBuffer[22] = {'A','0','0','0','1','0','1','2','0','0','1','0','1','2','0','0','1','0','1','2'};
-char tmp[22];
+char sendBuffer[21] = {'A','0','0','0','1','0','1','2','0','0','1','0','1','2','0','0','1','0','1'};
+char tmp[21];
 uint8_t sys, gyro, accel, mag = 0;
 uint8_t system_status, self_test_result, system_error = 0;
 char calib = 0x00;
@@ -247,18 +247,18 @@ void loop()
     calib = 0x00;
     calib = ( mag & 0x03)| ( (accel <<2)& 0x0C) | ( (gyro <<4)& 0x30)| ( (sys <<6)& 0xC0);
  
-    tmp[0] = 0x00;
-    tmp[1] = calib;
+    // tmp[0] = 0x00;
+    tmp[0] = calib;
 
     bno->readLen(Adafruit_BNO055::BNO055_QUATERNION_DATA_W_LSB_ADDR, bufferQuat, 8);          
     for(int i =0;i<8;i++)
-      tmp[i+2] = bufferQuat[i];
+      tmp[i+1] = bufferQuat[i];
     bno->readLen(Adafruit_BNO055::BNO055_LINEAR_ACCEL_DATA_X_LSB_ADDR, bufferVect, 6);
     for(int i =0;i<6;i++)
-      tmp[i+10] = bufferVect[i]; //11-16
+      tmp[i+9] = bufferVect[i]; //11-16
     bno->readLen(Adafruit_BNO055::BNO055_GYRO_DATA_X_LSB_ADDR, bufferVect, 6);
     for(int i =0;i<6;i++)
-      tmp[i+16] = bufferVect[i]; //17-22
+      tmp[i+15] = bufferVect[i]; //17-22
 
     memcpy(&sendBuffer[0],&tmp[0],sizeof(sendBuffer));
 
@@ -336,7 +336,7 @@ void SendData(TimerHandle_t handle)
     blebas.notify(get_battery_percent());
     num = 0;
   }
-  bleuart.write(sendBuffer,22);
+  bleuart.write(sendBuffer,21);
   digitalToggle(LED_RED);
   digitalToggle(CASE_LED_RED);
 }
@@ -532,7 +532,7 @@ void toBin(bool arr[],uint8_t n)
  * @return true all elements are equal
  * @return false not all elements are equal
  */
-bool elementsEqual(uint8_t arr[],uint8_t len = 0)
+bool elementsEqual(uint8_t arr[],uint8_t len)
 {
   if (len == 0)
   {
