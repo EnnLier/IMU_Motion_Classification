@@ -8,10 +8,10 @@ function Hd = BW_Lowpass
 % Butterworth Lowpass filter designed using FDESIGN.LOWPASS.
 
 % All frequency values are in Hz.
-Fs = 133;  % Sampling Frequency
+Fs = 100;  % Sampling Frequency
 
 N  = 32;  % Order
-Fc = 10;  % Cutoff Frequency
+Fc = 25;  % Cutoff Frequency
 
 % Construct an FDESIGN object and call its BUTTER method.
 h  = fdesign.lowpass('N,F3dB', N, Fc, Fs);

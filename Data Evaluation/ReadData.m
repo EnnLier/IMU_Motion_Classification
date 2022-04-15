@@ -8,6 +8,8 @@ Filename = sprintf('Messdaten_%s.mat', datestr(now,'mm-dd-yyyy HH-MM'));
 % name = "measurement_data_";
 % datatype = ".mat";
 
+addpath("Filter");
+
 names = dir("Data");
 names(1) =[];
 names(1) =[];
@@ -25,6 +27,8 @@ end
 % formatspec = '%s %s %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f';
 formatspec = '%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f';
 relevantdat =[1  0  0  0  0  0  1  1  1  1  1  1  1  1  1  1 ];
+% formatspec = '%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f';
+% relevantdat =[1  0  0  0  0  1  1  1  1  1  1  1  1  1  1 ];
 dat = [];
 % dT = [];
 t = [];
@@ -57,10 +61,13 @@ data.Accz = dat(:,8);
 data.Gyrx = dat(:,9);
 data.Gyry = dat(:,10);
 data.Gyrz = dat(:,11);
+data.Gyr = [data.Gyrx, data.Gyry, data.Gyrz];
 data.Acc = [data.Accx, data.Accy, data.Accz];
-data.Velx = cumtrapz(data.t(:,1),data.Accx(:,1));
-data.Vely = cumtrapz(data.t(:,1),data.Accy(:,1));
-data.Velz = cumtrapz(data.t(:,1),data.Accz(:,1));
+data.Acc_filt = filter(BW_Highpass,data.Acc);
+
+data.Velx = cumtrapz(data.t(:,1),data.Acc_filt(:,1));
+data.Vely = cumtrapz(data.t(:,1),data.Acc_filt(:,2));
+data.Velz = cumtrapz(data.t(:,1),data.Acc_filt(:,3));
 data.Vel = [data.Velx, data.Vely, data.Velz];
 
 save(Filename,'data');
@@ -84,4 +91,4 @@ function rt = datetimeToTimestamp(dtArr)
 %         t2 = dtArr(i+1,1);
         rt(i,1) = seconds(dtArr(i,1)-dtArr(1,1));
     end
-end
+ end
