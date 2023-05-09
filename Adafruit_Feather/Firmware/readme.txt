@@ -1,0 +1,1 @@
+adafruit-nrfutil.exe --verbose dfu serial --package feather_nrf52840_express_bootloader-0.6.3_s140_6.1.1.zip --port COM14 -b 115200 --singlebank --touch 1200
