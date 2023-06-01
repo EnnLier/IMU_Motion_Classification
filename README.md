@@ -16,14 +16,14 @@ The [Adafruit Feather](#adafruit-feather-express) is able to to draw power via U
 
 ## Casing
 This folder contains a 3D model of the prototype, which was used to design a casing for the sensor bundle. Following some pictures of the 3D model, the casing and finally the actual prototype.
+https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/Pictures/
+<p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/Pictures/Sensor_bundle.png" alt="Stacked sensor bundle" width="600"></p>
 
-<p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/src/Sensor_bundle.png" alt="Stacked sensor bundle" width="600"></p>
+<p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/Pictures/Casing_open.png" alt="Sensorcasing" width="600"></p>
 
-<p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/src/Casing_open.png" alt="Sensorcasing" width="600"></p>
+<p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/Pictures/Casing_closed.png" alt="Assembled sensor and its casing"  width="600"></p>
 
-<p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/src/Casing_closed.png" alt="Assembled sensor and its casing"  width="600"></p>
-
-<p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/src/Casing_bottom_below.png" alt="View from below"  width="600"></p>
+<p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Casing/Pictures/Casing_bottom_below.png" alt="View from below"  width="600"></p>
 
 <p align="center"><img src="https://github.com/EnnLier/IMU_Motion_Classification/blob/master/Images/Sensor_bundles.jpg" alt="Sensorbundle real"  width="600"></p>
 
